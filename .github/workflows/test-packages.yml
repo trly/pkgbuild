@@ -20,6 +20,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Trust workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Check changed packages
         env:
           BEFORE: ${{ github.event.before }}
@@ -28,17 +31,19 @@ jobs:
         run: |
           set -euo pipefail
 
+          if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            changed_files=$(git diff --name-only "$BEFORE" "$AFTER")
+          else
+            changed_files=$(git diff-tree --root --no-commit-id --name-only -r "$AFTER")
+          fi
+
           mapfile -t packages < <(
-            if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-              git diff --name-only "$BEFORE" "$AFTER"
-            else
-              git diff-tree --root --no-commit-id --name-only -r "$AFTER"
-            fi | while IFS= read -r path; do
+            while IFS= read -r path; do
               package=${path%%/*}
               if [[ "$path" == */* && -f "$package/PKGBUILD" ]]; then
                 printf '%s\n' "$package"
               fi
-            done | sort -u
+            done <<< "$changed_files" | sort -u
           )
 
           if (( ${#packages[@]} == 0 )); then
@@ -71,7 +76,12 @@ jobs:
       options: --privileged
     steps:
       - name: Install tools
-        run: pacman -Syu --noconfirm --needed devtools git sudo
+        shell: bash
+        run: |
+          pacman -Syu --noconfirm --needed devtools git sudo
+          systemd-machine-id-setup
+          printf '%s\n' '#!/bin/bash' 'exec /usr/bin/systemd-nspawn --keep-unit "$@"' > /usr/local/bin/systemd-nspawn
+          chmod 0755 /usr/local/bin/systemd-nspawn
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -84,6 +94,7 @@ jobs:
           printf 'builder ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/builder
           chmod 0440 /etc/sudoers.d/builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Build changed packages
         env:
@@ -93,17 +104,19 @@ jobs:
         run: |
           set -euo pipefail
 
+          if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            changed_files=$(git diff --name-only "$BEFORE" "$AFTER")
+          else
+            changed_files=$(git diff-tree --root --no-commit-id --name-only -r "$AFTER")
+          fi
+
           mapfile -t packages < <(
-            if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-              git diff --name-only "$BEFORE" "$AFTER"
-            else
-              git diff-tree --root --no-commit-id --name-only -r "$AFTER"
-            fi | while IFS= read -r path; do
+            while IFS= read -r path; do
               package=${path%%/*}
               if [[ "$path" == */* && -f "$package/PKGBUILD" ]]; then
                 printf '%s\n' "$package"
               fi
-            done | sort -u
+            done <<< "$changed_files" | sort -u
           )
 
           if (( ${#packages[@]} == 0 )); then
