@@ -1,0 +1,129 @@
+name: Test changed packages
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  namcap:
+    name: namcap
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git namcap
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Check changed packages
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t packages < <(
+            if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              git diff --name-only "$BEFORE" "$AFTER"
+            else
+              git diff-tree --root --no-commit-id --name-only -r "$AFTER"
+            fi | while IFS= read -r path; do
+              package=${path%%/*}
+              if [[ "$path" == */* && -f "$package/PKGBUILD" ]]; then
+                printf '%s\n' "$package"
+              fi
+            done | sort -u
+          )
+
+          if (( ${#packages[@]} == 0 )); then
+            echo "No changed packages"
+            printf '## Namcap\n\nNo changed packages.\n' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          printf '## Namcap\n\n| Package | Result |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          failed=0
+          for package in "${packages[@]}"; do
+            echo "::group::namcap $package"
+            if (cd "$package" && namcap PKGBUILD); then
+              printf '| `%s` | Passed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
+              echo "::notice file=$package/PKGBUILD,title=namcap passed::$package passed namcap"
+            else
+              printf '| `%s` | Failed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error file=$package/PKGBUILD,title=namcap failed::$package failed namcap"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$failed"
+
+  pkgctl-build:
+    name: pkgctl build
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed devtools git sudo
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Configure build user
+        shell: bash
+        run: |
+          useradd --create-home builder
+          printf 'builder ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/builder
+          chmod 0440 /etc/sudoers.d/builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+
+      - name: Build changed packages
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t packages < <(
+            if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              git diff --name-only "$BEFORE" "$AFTER"
+            else
+              git diff-tree --root --no-commit-id --name-only -r "$AFTER"
+            fi | while IFS= read -r path; do
+              package=${path%%/*}
+              if [[ "$path" == */* && -f "$package/PKGBUILD" ]]; then
+                printf '%s\n' "$package"
+              fi
+            done | sort -u
+          )
+
+          if (( ${#packages[@]} == 0 )); then
+            echo "No changed packages"
+            printf '## pkgctl build\n\nNo changed packages.\n' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          printf '## pkgctl build\n\n| Package | Result |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          failed=0
+          for package in "${packages[@]}"; do
+            echo "::group::pkgctl build $package"
+            if (cd "$package" && sudo --user=builder --set-home pkgctl build); then
+              printf '| `%s` | Passed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
+              echo "::notice file=$package/PKGBUILD,title=pkgctl build passed::$package passed pkgctl build"
+            else
+              printf '| `%s` | Failed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error file=$package/PKGBUILD,title=pkgctl build failed::$package failed pkgctl build"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$failed"
