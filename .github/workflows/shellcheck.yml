@@ -1,0 +1,31 @@
+name: ShellCheck
+
+on:
+  push:
+    paths:
+      - build.sh
+      - create.sh
+      - lint.sh
+      - .github/workflows/shellcheck.yml
+  pull_request:
+    paths:
+      - build.sh
+      - create.sh
+      - lint.sh
+      - .github/workflows/shellcheck.yml
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install --yes shellcheck
+
+      - name: Check shell scripts
+        run: shellcheck --shell=bash build.sh create.sh lint.sh
