@@ -56,7 +56,7 @@ jobs:
           failed=0
           for package in "${packages[@]}"; do
             echo "::group::namcap $package"
-            if (cd "$package" && namcap PKGBUILD); then
+            if "$GITHUB_WORKSPACE/lint.sh" "$package"; then
               printf '| `%s` | Passed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
               echo "::notice file=$package/PKGBUILD,title=namcap passed::$package passed namcap"
             else
@@ -129,7 +129,7 @@ jobs:
           failed=0
           for package in "${packages[@]}"; do
             echo "::group::pkgctl build $package"
-            if (cd "$package" && sudo --user=builder --set-home pkgctl build); then
+            if (sudo --user=builder --set-home "$GITHUB_WORKSPACE/build.sh" "$package"); then
               printf '| `%s` | Passed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
               echo "::notice file=$package/PKGBUILD,title=pkgctl build passed::$package passed pkgctl build"
             else
