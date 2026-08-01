@@ -1,0 +1,20 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+pkgname=scip-bin
+pkgver=0.9.0
+pkgrel=1
+pkgdesc="Language-agnostic protocol for indexing source code"
+arch=('x86_64' 'aarch64')
+url="https://github.com/scip-code/scip"
+license=('Apache-2.0')
+provides=("scip=${pkgver}")
+conflicts=('scip')
+options=('!debug' '!strip')
+source_x86_64=("${url}/releases/download/v${pkgver}/scip-linux-amd64.tar.gz")
+source_aarch64=("${url}/releases/download/v${pkgver}/scip-linux-arm64.tar.gz")
+sha256sums_x86_64=('fc2e7273e110be9f35924da1066000183791e8bfdb0391355de6eaaa070fec75')
+sha256sums_aarch64=('e97aaf597ab6a6b6fbb1bbc43993e6efb596284aa9c3fa5b20d75186367c5e')
+
+package() {
+  install -Dm755 scip -t "${pkgdir}/usr/bin/"
+  install -Dm644 LICENSE -t "${pkgdir}/usr/share/licenses/${pkgname}/"
+}
