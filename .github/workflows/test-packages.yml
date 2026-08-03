@@ -2,141 +2,124 @@ name: Test changed packages
 
 on:
   push:
+  pull_request:
 
 permissions:
   contents: read
 
 jobs:
-  namcap:
-    name: namcap
+  discover:
+    name: Discover packages
+    uses: ./.github/workflows/discover-packages.yml
+    with:
+      base_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before || '' }}
+      head_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+  lint:
+    name: Lint packages
+    needs: discover
+    if: needs.discover.outputs.packages != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.discover.outputs.packages) }}
+    uses: ./.github/workflows/lint-package.yml
+    with:
+      package: ${{ matrix.package }}
+
+  collect-linted-packages:
+    name: Collect linted packages
+    needs: [discover, lint]
+    if: ${{ !cancelled() && needs.discover.outputs.packages != '' && needs.discover.outputs.packages != '[]' }}
     runs-on: ubuntu-latest
-    container:
-      image: archlinux:base-devel
+    outputs:
+      packages: ${{ steps.collect.outputs.packages }}
     steps:
-      - name: Install tools
-        run: pacman -Syu --noconfirm --needed git namcap
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download lint markers
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          fetch-depth: 0
+          pattern: lint-passed-*
+          path: ${{ runner.temp }}/lint-markers
+        continue-on-error: true
 
-      - name: Trust workspace
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Check changed packages
+      - name: Collect packages
+        id: collect
         env:
-          BEFORE: ${{ github.event.before }}
-          AFTER: ${{ github.sha }}
+          DISCOVERED_PACKAGES: ${{ needs.discover.outputs.packages }}
         shell: bash
         run: |
-          set -euo pipefail
+          markers_dir=${{ runner.temp }}/lint-markers
+          passed_packages='[]'
 
-          if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-            changed_files=$(git diff --name-only "$BEFORE" "$AFTER")
-          else
-            changed_files=$(git diff-tree --root --no-commit-id --name-only -r "$AFTER")
+          if [[ -d "$markers_dir" ]]; then
+            passed_packages=$(find "$markers_dir" -type f -name package.txt -exec cat {} + |
+              jq -R -s -c 'split("\n") | map(select(. != ""))')
           fi
 
-          mapfile -t packages < <(
-            while IFS= read -r path; do
-              package=${path%%/*}
-              if [[ "$path" == */* && -f "$package/PKGBUILD" ]]; then
-                printf '%s\n' "$package"
-              fi
-            done <<< "$changed_files" | sort -u
-          )
+          packages=$(jq -cn \
+            --argjson discovered "$DISCOVERED_PACKAGES" \
+            --argjson passed "$passed_packages" \
+            '$discovered | map(select(. as $package | $passed | index($package)))')
 
-          if (( ${#packages[@]} == 0 )); then
-            echo "No changed packages"
-            printf '## Namcap\n\nNo changed packages.\n' >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
 
-          printf '## Namcap\n\n| Package | Result |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
-          failed=0
-          for package in "${packages[@]}"; do
-            echo "::group::namcap $package"
-            if "$GITHUB_WORKSPACE/lint.sh" "$package"; then
-              printf '| `%s` | Passed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
-              echo "::notice file=$package/PKGBUILD,title=namcap passed::$package passed namcap"
-            else
-              printf '| `%s` | Failed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
-              echo "::error file=$package/PKGBUILD,title=namcap failed::$package failed namcap"
-              failed=1
-            fi
-            echo "::endgroup::"
-          done
-          exit "$failed"
+  build:
+    name: Build packages
+    needs: collect-linted-packages
+    if: needs.collect-linted-packages.outputs.packages != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        package: ${{ fromJSON(needs.collect-linted-packages.outputs.packages) }}
+    uses: ./.github/workflows/build-package.yml
+    with:
+      package: ${{ matrix.package }}
 
-  pkgctl-build:
-    name: pkgctl build
+  collect-built-packages:
+    name: Collect built packages
+    needs: [collect-linted-packages, build]
+    if: ${{ !cancelled() && needs.collect-linted-packages.outputs.packages != '' && needs.collect-linted-packages.outputs.packages != '[]' }}
     runs-on: ubuntu-latest
-    container:
-      image: archlinux:base-devel
-      options: --privileged
+    outputs:
+      packages: ${{ steps.collect.outputs.packages }}
     steps:
-      - name: Install tools
-        shell: bash
-        run: |
-          pacman -Syu --noconfirm --needed devtools git sudo
-          systemd-machine-id-setup
-          printf '%s\n' '#!/bin/bash' 'exec /usr/bin/systemd-nspawn --keep-unit "$@"' > /usr/local/bin/systemd-nspawn
-          chmod 0755 /usr/local/bin/systemd-nspawn
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download build markers
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          fetch-depth: 0
+          pattern: build-passed-*
+          path: ${{ runner.temp }}/build-markers
+        continue-on-error: true
 
-      - name: Configure build user
-        shell: bash
-        run: |
-          useradd --create-home builder
-          printf 'builder ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/builder
-          chmod 0440 /etc/sudoers.d/builder
-          chown -R builder:builder "$GITHUB_WORKSPACE"
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Build changed packages
+      - name: Collect packages
+        id: collect
         env:
-          BEFORE: ${{ github.event.before }}
-          AFTER: ${{ github.sha }}
+          LINTED_PACKAGES: ${{ needs.collect-linted-packages.outputs.packages }}
         shell: bash
         run: |
-          set -euo pipefail
+          markers_dir=${{ runner.temp }}/build-markers
+          passed_packages='[]'
 
-          if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-            changed_files=$(git diff --name-only "$BEFORE" "$AFTER")
-          else
-            changed_files=$(git diff-tree --root --no-commit-id --name-only -r "$AFTER")
+          if [[ -d "$markers_dir" ]]; then
+            passed_packages=$(find "$markers_dir" -type f -name package.txt -exec cat {} + |
+              jq -R -s -c 'split("\n") | map(select(. != ""))')
           fi
 
-          mapfile -t packages < <(
-            while IFS= read -r path; do
-              package=${path%%/*}
-              if [[ "$path" == */* && -f "$package/PKGBUILD" ]]; then
-                printf '%s\n' "$package"
-              fi
-            done <<< "$changed_files" | sort -u
-          )
+          packages=$(jq -cn \
+            --argjson linted "$LINTED_PACKAGES" \
+            --argjson passed "$passed_packages" \
+            '$linted | map(select(. as $package | $passed | index($package)))')
 
-          if (( ${#packages[@]} == 0 )); then
-            echo "No changed packages"
-            printf '## pkgctl build\n\nNo changed packages.\n' >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
 
-          printf '## pkgctl build\n\n| Package | Result |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
-          failed=0
-          for package in "${packages[@]}"; do
-            echo "::group::pkgctl build $package"
-            if (sudo --user=builder --set-home "$GITHUB_WORKSPACE/build.sh" "$package"); then
-              printf '| `%s` | Passed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
-              echo "::notice file=$package/PKGBUILD,title=pkgctl build passed::$package passed pkgctl build"
-            else
-              printf '| `%s` | Failed |\n' "$package" >> "$GITHUB_STEP_SUMMARY"
-              echo "::error file=$package/PKGBUILD,title=pkgctl build failed::$package failed pkgctl build"
-              failed=1
-            fi
-            echo "::endgroup::"
-          done
-          exit "$failed"
+  validate:
+    name: Validate packages
+    needs: collect-built-packages
+    if: needs.collect-built-packages.outputs.packages != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.collect-built-packages.outputs.packages) }}
+    uses: ./.github/workflows/validate-package.yml
+    with:
+      package: ${{ matrix.package }}
