@@ -1,0 +1,62 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+pkgname=1password
+_tarver=8.12.30
+pkgver=${_tarver//-/_}
+pkgrel=1
+pkgdesc="Password manager and secure wallet"
+arch=('x86_64' 'aarch64')
+url="https://1password.com"
+license=('LicenseRef-1Password-Proprietary')
+depends=('alsa-lib' 'at-spi2-core' 'cairo' 'dbus' 'expat' 'glib2' 'gtk3'
+         'hicolor-icon-theme' 'libcups' 'libx11' 'libxcb' 'libxcomposite'
+         'libxdamage' 'libxext' 'libxfixes' 'libxkbcommon' 'libxrandr' 'mesa'
+         'nspr' 'nss' 'pango' 'xdg-utils')
+conflicts=('1password-beta' '1password-beta-bin')
+options=('!debug' '!strip')
+install=1password.install
+backup=('etc/1password/custom_allowed_browsers')
+source_x86_64=("https://downloads.1password.com/linux/tar/stable/${CARCH}/1password-${_tarver}.x64.tar.gz"{,.sig})
+source_aarch64=("https://downloads.1password.com/linux/tar/stable/aarch64/1password-${_tarver}.arm64.tar.gz"{,.sig})
+sha256sums_x86_64=('8d9b8f750a3928fbdb62a37961716ade5004a8971c5a18ba44e14e4af8e25ae5'
+                   '6cf6a540f1017628d93bc5e990ae4ae22e6f2450c08e76564c75b6991d6e8689')
+sha256sums_aarch64=('b38c26550ec95d5d1c6a40e1b9e6b09105938e2731395cddac742597accdc2f2'
+                    '601b3390b136c79e13d4c8ad70e87cefebcd7e657971bb0863a078e22b9fa3b4')
+validpgpkeys=('3FEF9748469ADBE15DA7CA80AC2D62742012EA22')
+
+package() {
+  local archive_arch=x64
+  if [[ $CARCH == aarch64 ]]; then
+    archive_arch=arm64
+  fi
+
+  cd "1password-${_tarver}.${archive_arch}"
+
+  local resolution
+  for resolution in 32x32 64x64 256x256 512x512; do
+    install -Dm644 "resources/icons/hicolor/${resolution}/apps/1password.png" \
+      -t "${pkgdir}/usr/share/icons/hicolor/${resolution}/apps/"
+  done
+  install -Dm644 resources/1password.desktop -t "${pkgdir}/usr/share/applications/"
+  install -Dm644 LICENSE.electron.txt LICENSES.chromium.html \
+    -t "${pkgdir}/usr/share/licenses/${pkgname}/"
+
+  install -Dm644 resources/custom_allowed_browsers -t "${pkgdir}/usr/share/doc/${pkgname}/examples/"
+  install -Dm644 resources/custom_allowed_browsers -t "${pkgdir}/etc/1password/"
+
+  cd "${srcdir}"
+  install -dm755 "${pkgdir}/opt"
+  mv "1password-${_tarver}.${archive_arch}" "${pkgdir}/opt/1Password"
+
+  rm "${pkgdir}/opt/1Password/install_biometrics_policy.sh"
+  rm -r "${pkgdir}/opt/1Password/resources/icons/"
+  rm "${pkgdir}/opt/1Password/resources/1password.desktop" \
+    "${pkgdir}/opt/1Password/resources/custom_allowed_browsers"
+
+  install -dm755 "${pkgdir}/usr/bin"
+  ln -s /opt/1Password/1password "${pkgdir}/usr/bin/1password"
+  ln -s /opt/1Password/1password-mcp "${pkgdir}/usr/bin/1password-mcp"
+  ln -s 1password-mcp "${pkgdir}/opt/1Password/onepassword-mcp"
+
+  # Electron's sandbox requires the setuid bit.
+  chmod 4755 "${pkgdir}/opt/1Password/chrome-sandbox"
+}

@@ -28,5 +28,13 @@ if ! command -v pkgctl >/dev/null 2>&1; then
   exit 127
 fi
 
+key_files=()
+for key_file in "$package_dir"/keys/pgp/*.asc; do
+  [[ -f $key_file ]] && key_files+=("$key_file")
+done
+if (( ${#key_files[@]} )); then
+  gpg --batch --import "${key_files[@]}"
+fi
+
 cd -- "$package_dir"
 exec pkgctl build
