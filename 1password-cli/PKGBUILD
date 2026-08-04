@@ -8,22 +8,39 @@ url="https://developer.1password.com/docs/cli/"
 license=('LicenseRef-1Password-Proprietary')
 options=('!debug' '!strip')
 install=1password-cli.install
-source=('1password-cli.license' '1password.key')
+source=('1password-cli.license')
 source_x86_64=("https://cache.agilebits.com/dist/1P/op2/pkg/v${pkgver}/op_linux_amd64_v${pkgver}.zip")
 source_aarch64=("https://cache.agilebits.com/dist/1P/op2/pkg/v${pkgver}/op_linux_arm64_v${pkgver}.zip")
-sha256sums=('dae49a8282b3ed44b430da3b05293a5cd5b5b59a4b87075c211f2b9e1692f4cf'
-            'f39e7dd9dedc581ced85732832f217e0de5860a3b80279b5af4bc7c6d8157bae')
+sha256sums=('dae49a8282b3ed44b430da3b05293a5cd5b5b59a4b87075c211f2b9e1692f4cf')
 sha256sums_x86_64=('7a7b7168f521d31838f0cc59abf172527853308c9b9cceee34895121acb0be0f')
 sha256sums_aarch64=('854f92932dcfebc26434e83e426729933a8d0aae447889e439cf01f1b213a7fd')
 validpgpkeys=('3FEF9748469ADBE15DA7CA80AC2D62742012EA22')
 
-prepare() {
-  local keyring="${srcdir}/gnupg"
+verify() {
+  local archive_arch=amd64
+  if [[ $CARCH == aarch64 ]]; then
+    archive_arch=arm64
+  fi
 
-  install -dm700 "${keyring}"
-  gpg --batch --homedir "${keyring}" --import 1password.key
-  gpg --batch --homedir "${keyring}" --assert-signer "${validpgpkeys[0]}" \
-    --verify op.sig op
+  local archive="op_linux_${archive_arch}_v${pkgver}.zip"
+  local key="keys/pgp/${validpgpkeys[0]}.asc"
+  local verifydir
+  verifydir="$(mktemp -d)"
+  install -dm700 "${verifydir}/gnupg"
+
+  local status
+  if bsdtar -xf "${archive}" -C "${verifydir}" op op.sig &&
+    gpg --batch --homedir "${verifydir}/gnupg" --import "${key}" &&
+    gpg --batch --homedir "${verifydir}/gnupg" \
+      --assert-signer "${validpgpkeys[0]}" \
+      --verify "${verifydir}/op.sig" "${verifydir}/op"; then
+    status=0
+  else
+    status=$?
+  fi
+
+  rm -rf "${verifydir}"
+  return "${status}"
 }
 
 package() {

@@ -66,7 +66,9 @@ jobs:
   build:
     name: Build packages
     needs: collect-linted-packages
-    if: needs.collect-linted-packages.outputs.packages != '[]'
+    if: >-
+      needs.collect-linted-packages.outputs.packages != '[]' &&
+      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -79,7 +81,11 @@ jobs:
   collect-built-packages:
     name: Collect built packages
     needs: [collect-linted-packages, build]
-    if: ${{ !cancelled() && needs.collect-linted-packages.outputs.packages != '' && needs.collect-linted-packages.outputs.packages != '[]' }}
+    if: >-
+      ${{ !cancelled() &&
+      needs.collect-linted-packages.outputs.packages != '' &&
+      needs.collect-linted-packages.outputs.packages != '[]' &&
+      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.collect.outputs.packages }}
