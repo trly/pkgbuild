@@ -1,0 +1,57 @@
+name: Validate package
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: Package directory to validate
+        required: true
+        type: string
+
+jobs:
+  validate:
+    name: Validate (${{ inputs.package }})
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    permissions:
+      contents: read
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git namcap
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download package archive
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-${{ inputs.package }}
+          path: ${{ runner.temp }}/packages
+
+      - name: Validate PKGBUILD and package archive
+        env:
+          PACKAGE: ${{ inputs.package }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/lint.sh" "$PACKAGE"
+
+          mapfile -t archives < <(find "$RUNNER_TEMP/packages" -type f -name '*.pkg.tar.zst' -print)
+          if (( ${#archives[@]} == 0 )); then
+            echo 'No package archives were downloaded' >&2
+            exit 1
+          fi
+
+          namcap "${archives[@]}"
+
+      - name: Write validation marker
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: printf '%s\n' "$PACKAGE" > "$RUNNER_TEMP/package.txt"
+
+      - name: Upload validation marker
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: validation-passed-${{ inputs.package }}
+          path: ${{ runner.temp }}/package.txt
+          retention-days: 1

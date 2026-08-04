@@ -1,0 +1,7 @@
+version = 1
+
+[[annotations]]
+path = [".gitignore", ".SRCINFO", "1password-cli.install", "1password-cli.license", "keys/**", "PKGBUILD"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Arch Linux Contributors"
+SPDX-License-Identifier = "0BSD"
