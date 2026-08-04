@@ -20,9 +20,9 @@ source_x86_64=("https://downloads.1password.com/linux/tar/stable/${CARCH}/1passw
 source_aarch64=("https://downloads.1password.com/linux/tar/stable/aarch64/1password-${_tarver}.arm64.tar.gz"{,.sig})
 sha256sums=('b4b4a183f41fcd6610b61e73afba2cab8ee194ab9de2112473be6137f196d818')
 sha256sums_x86_64=('8d9b8f750a3928fbdb62a37961716ade5004a8971c5a18ba44e14e4af8e25ae5'
-                   '6cf6a540f1017628d93bc5e990ae4ae22e6f2450c08e76564c75b6991d6e8689')
+                   'SKIP')
 sha256sums_aarch64=('b38c26550ec95d5d1c6a40e1b9e6b09105938e2731395cddac742597accdc2f2'
-                    '601b3390b136c79e13d4c8ad70e87cefebcd7e657971bb0863a078e22b9fa3b4')
+                    'SKIP')
 validpgpkeys=('3FEF9748469ADBE15DA7CA80AC2D62742012EA22')
 
 package() {
