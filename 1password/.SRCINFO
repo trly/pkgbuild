@@ -1,7 +1,7 @@
 pkgbase = 1password
 	pkgdesc = Password manager and secure wallet
 	pkgver = 8.12.30
-	pkgrel = 2
+	pkgrel = 3
 	url = https://1password.com
 	install = 1password.install
 	arch = x86_64
@@ -33,6 +33,8 @@ pkgbase = 1password
 	depends = zlib
 	conflicts = 1password-beta
 	conflicts = 1password-beta-bin
+	noextract = 1password-8.12.30.x64.tar.gz
+	noextract = 1password-8.12.30.arm64.tar.gz
 	options = !debug
 	options = !strip
 	backup = etc/1password/custom_allowed_browsers

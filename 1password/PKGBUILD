@@ -2,7 +2,7 @@
 pkgname=1password
 _tarver=8.12.30
 pkgver=${_tarver//-/_}
-pkgrel=2
+pkgrel=3
 pkgdesc="Password manager and secure wallet"
 arch=('x86_64' 'aarch64')
 url="https://1password.com"
@@ -18,6 +18,8 @@ backup=('etc/1password/custom_allowed_browsers')
 source=('1password.license')
 source_x86_64=("https://downloads.1password.com/linux/tar/stable/${CARCH}/1password-${_tarver}.x64.tar.gz"{,.sig})
 source_aarch64=("https://downloads.1password.com/linux/tar/stable/aarch64/1password-${_tarver}.arm64.tar.gz"{,.sig})
+noextract=("1password-${_tarver}.x64.tar.gz"
+           "1password-${_tarver}.arm64.tar.gz")
 sha256sums=('b4b4a183f41fcd6610b61e73afba2cab8ee194ab9de2112473be6137f196d818')
 sha256sums_x86_64=('8d9b8f750a3928fbdb62a37961716ade5004a8971c5a18ba44e14e4af8e25ae5'
                    'SKIP')
@@ -31,7 +33,12 @@ package() {
     archive_arch=arm64
   fi
 
-  cd "1password-${_tarver}.${archive_arch}"
+  local archive="1password-${_tarver}.${archive_arch}.tar.gz"
+  install -dm755 "${pkgdir}/opt/1Password"
+  bsdtar --no-same-permissions -xf "${srcdir}/${archive}" \
+    --strip-components 1 -C "${pkgdir}/opt/1Password"
+
+  cd "${pkgdir}/opt/1Password"
 
   local resolution
   for resolution in 32x32 64x64 256x256 512x512; do
@@ -46,9 +53,6 @@ package() {
 
   install -Dm644 resources/custom_allowed_browsers -t "${pkgdir}/usr/share/doc/${pkgname}/examples/"
   install -Dm644 resources/custom_allowed_browsers -t "${pkgdir}/etc/1password/"
-
-  install -dm755 "${pkgdir}/opt"
-  cp -a "${srcdir}/1password-${_tarver}.${archive_arch}" "${pkgdir}/opt/1Password"
 
   rm "${pkgdir}/opt/1Password/after-install.sh" \
     "${pkgdir}/opt/1Password/after-remove.sh" \
