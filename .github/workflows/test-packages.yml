@@ -2,10 +2,16 @@ name: Test changed packages
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:
   contents: read
+
+concurrency:
+  group: package-pipeline-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   discover:
@@ -129,3 +135,52 @@ jobs:
     uses: ./.github/workflows/validate-package.yml
     with:
       package: ${{ matrix.package }}
+
+  required:
+    name: Required package checks
+    needs: [discover, lint, build, validate]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful package checks
+        env:
+          DISCOVERED_PACKAGES: ${{ needs.discover.outputs.packages }}
+          DISCOVER_RESULT: ${{ needs.discover.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$DISCOVER_RESULT" != success ]]; then
+            echo "Package discovery did not succeed: $DISCOVER_RESULT" >&2
+            exit 1
+          fi
+
+          if [[ "$DISCOVERED_PACKAGES" == '[]' ]]; then
+            echo 'No package changes require a build.'
+            exit 0
+          fi
+
+          for check in \
+            "lint:$LINT_RESULT" \
+            "build:$BUILD_RESULT" \
+            "validate:$VALIDATE_RESULT"; do
+            if [[ "$check" != *:success ]]; then
+              echo "Required package check did not succeed: $check" >&2
+              exit 1
+            fi
+          done
+
+  publish:
+    name: Publish packages
+    needs: [lint, build, collect-built-packages, validate]
+    if: >-
+      success() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.collect-built-packages.outputs.packages != '[]'
+    uses: ./.github/workflows/publish-packages.yml
+    permissions:
+      actions: read
+      contents: read
+    secrets: inherit
