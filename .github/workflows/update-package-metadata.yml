@@ -1,0 +1,79 @@
+name: Update package metadata
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Update checksums and .SRCINFO
+    if: >-
+      github.actor == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    permissions:
+      contents: write
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git pacman-contrib
+
+      - name: Check out Renovate branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Update package metadata
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t packages < <(
+            while IFS= read -r path; do
+              package=${path%/PKGBUILD}
+              [[ $package != "$path" && -f "$package/PKGBUILD" ]] || continue
+              printf '%s\n' "$package"
+            done < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- '*/PKGBUILD') | sort -u
+          )
+
+          if (( ${#packages[@]} == 0 )); then
+            echo 'No changed package PKGBUILD files found.'
+            exit 0
+          fi
+
+          for package in "${packages[@]}"; do
+            (
+              cd "$package"
+              updpkgsums
+              makepkg --printsrcinfo > .SRCINFO
+            )
+          done
+
+      - name: Commit updated metadata
+        env:
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name 'renovate[bot]'
+          git config user.email '29139614+renovate[bot]@users.noreply.github.com'
+          git add -- '*/PKGBUILD' '*/.SRCINFO'
+          if git diff --cached --quiet; then
+            echo 'Package metadata is already current.'
+            exit 0
+          fi
+          git commit -m 'chore: update package metadata'
+          git push origin "HEAD:${GITHUB_HEAD_REF}"

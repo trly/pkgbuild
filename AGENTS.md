@@ -10,6 +10,15 @@
 - Package build outputs and downloaded sources (`pkg/`, `src/`, `*.pkg.tar.*`, `*.src.tar.*`, and package-specific source archives) are ignored; do not treat them as source changes.
 - Preserve the package-local `REUSE.toml` SPDX annotations when adding or changing package metadata files.
 
+## Renovate-managed packages
+
+- To enable Renovate for a package whose upstream publishes GitHub tags or releases, add a Renovate annotation to its `pkgver` assignment in `PKGBUILD`:
+  `pkgver=1.2.3 # renovate: datasource=github-tags depName=OWNER/REPOSITORY`
+- Use the upstream repository's `OWNER/REPOSITORY` value for `depName`; the repository's `renovate.json` removes an optional leading `v` from Git tags.
+- Keep package source URLs, archive names, and any version-derived variables based on `pkgver` so Renovate's version replacement updates the downloadable source as well.
+- Renovate updates the version only. The `Update package metadata` workflow recalculates checksums with `updpkgsums` and regenerates `.SRCINFO` for changed package directories, then commits those files to same-repository Renovate pull requests.
+- New packages using this pattern are picked up automatically. Packages whose upstream version is stored in another variable, or whose releases are not available through a supported Renovate datasource, require a corresponding custom-manager or datasource change before adding an annotation.
+
 ## Additional References
 - https://wiki.archlinux.org/title/Creating_packages
 - https://man.archlinux.org/man/PKGBUILD.5
