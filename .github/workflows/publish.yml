@@ -27,6 +27,7 @@ jobs:
           - 1password-cli
           - deja
           - scip
+          - spotatui
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel@sha256:c1829f370be8434135f43fb3acaef1256780804ac3b2d2eec90dfb1232e1ffdf
