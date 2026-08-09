@@ -16,8 +16,10 @@ options=('!debug' '!strip')
 install=1password.install
 backup=('etc/1password/custom_allowed_browsers')
 source=('1password.license')
-source_x86_64=("https://downloads.1password.com/linux/tar/stable/${CARCH}/1password-${_tarver}.x64.tar.gz"{,.sig})
-source_aarch64=("https://downloads.1password.com/linux/tar/stable/aarch64/1password-${_tarver}.arm64.tar.gz"{,.sig})
+source_x86_64=("https://downloads.1password.com/linux/tar/stable/${CARCH}/1password-${_tarver}.x64.tar.gz"
+              "1password-${_tarver}.x64.tar.gz.signature::https://downloads.1password.com/linux/tar/stable/${CARCH}/1password-${_tarver}.x64.tar.gz.sig")
+source_aarch64=("https://downloads.1password.com/linux/tar/stable/aarch64/1password-${_tarver}.arm64.tar.gz"
+                "1password-${_tarver}.arm64.tar.gz.signature::https://downloads.1password.com/linux/tar/stable/aarch64/1password-${_tarver}.arm64.tar.gz.sig")
 noextract=("1password-${_tarver}.x64.tar.gz"
            "1password-${_tarver}.arm64.tar.gz")
 sha256sums=('b4b4a183f41fcd6610b61e73afba2cab8ee194ab9de2112473be6137f196d818')
@@ -26,6 +28,32 @@ sha256sums_x86_64=('8d9b8f750a3928fbdb62a37961716ade5004a8971c5a18ba44e14e4af8e2
 sha256sums_aarch64=('b38c26550ec95d5d1c6a40e1b9e6b09105938e2731395cddac742597accdc2f2'
                     'SKIP')
 validpgpkeys=('3FEF9748469ADBE15DA7CA80AC2D62742012EA22')
+
+verify() {
+  local archive_arch=x64
+  if [[ $CARCH == aarch64 ]]; then
+    archive_arch=arm64
+  fi
+
+  local archive="1password-${_tarver}.${archive_arch}.tar.gz"
+  local key="${startdir}/keys/pgp/${validpgpkeys[0]}.asc"
+  local verifydir
+  verifydir="$(mktemp -d)"
+  install -dm700 "${verifydir}/gnupg"
+
+  local status
+  if gpg --batch --homedir "${verifydir}/gnupg" --import "${key}" &&
+     gpg --batch --homedir "${verifydir}/gnupg" \
+       --assert-signer "${validpgpkeys[0]}" \
+       --verify "${archive}.signature" "${archive}"; then
+    status=0
+  else
+    status=$?
+  fi
+
+  rm -rf "${verifydir}"
+  return "${status}"
+}
 
 package() {
   local archive_arch=x64

@@ -42,11 +42,11 @@ pkgbase = 1password
 	validpgpkeys = 3FEF9748469ADBE15DA7CA80AC2D62742012EA22
 	sha256sums = b4b4a183f41fcd6610b61e73afba2cab8ee194ab9de2112473be6137f196d818
 	source_x86_64 = https://downloads.1password.com/linux/tar/stable/x86_64/1password-8.12.30.x64.tar.gz
-	source_x86_64 = https://downloads.1password.com/linux/tar/stable/x86_64/1password-8.12.30.x64.tar.gz.sig
+	source_x86_64 = 1password-8.12.30.x64.tar.gz.signature::https://downloads.1password.com/linux/tar/stable/x86_64/1password-8.12.30.x64.tar.gz.sig
 	sha256sums_x86_64 = 8d9b8f750a3928fbdb62a37961716ade5004a8971c5a18ba44e14e4af8e25ae5
 	sha256sums_x86_64 = SKIP
 	source_aarch64 = https://downloads.1password.com/linux/tar/stable/aarch64/1password-8.12.30.arm64.tar.gz
-	source_aarch64 = https://downloads.1password.com/linux/tar/stable/aarch64/1password-8.12.30.arm64.tar.gz.sig
+	source_aarch64 = 1password-8.12.30.arm64.tar.gz.signature::https://downloads.1password.com/linux/tar/stable/aarch64/1password-8.12.30.arm64.tar.gz.sig
 	sha256sums_aarch64 = b38c26550ec95d5d1c6a40e1b9e6b09105938e2731395cddac742597accdc2f2
 	sha256sums_aarch64 = SKIP
 
