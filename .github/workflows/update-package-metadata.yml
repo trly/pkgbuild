@@ -31,6 +31,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
+          token: ${{ secrets.METADATA_DISPATCH_TOKEN }}
 
       - name: Update package metadata
         env:
