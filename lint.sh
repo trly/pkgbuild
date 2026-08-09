@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Travis Lyons
+# SPDX-License-Identifier: MIT
+
 set -euo pipefail
 
 usage() {
