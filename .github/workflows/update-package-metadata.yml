@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Travis Lyons
+# SPDX-License-Identifier: MIT
+
 name: Update package metadata
 
 on:
