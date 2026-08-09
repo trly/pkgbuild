@@ -63,6 +63,18 @@ jobs:
             exit 1
           fi
 
+          existing_packages=$(pkgdepot package list stable)
+          existing_filenames=$(jq -r '.[].filename' <<< "$existing_packages")
+          declare -A published_filenames=()
+          while IFS= read -r filename; do
+            published_filenames["$filename"]=1
+          done <<< "$existing_filenames"
+
           for archive in "${archives[@]}"; do
+            filename=$(basename "$archive")
+            if [[ ${published_filenames["$filename"]+present} ]]; then
+              echo "Skipping already published package $filename"
+              continue
+            fi
             pkgdepot package publish stable "$archive"
           done
