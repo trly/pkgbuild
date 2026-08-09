@@ -24,7 +24,7 @@ jobs:
       contents: write
     steps:
       - name: Install tools
-        run: pacman -Syu --noconfirm --needed git pacman-contrib
+        run: pacman -Syu --noconfirm --needed git pacman-contrib sudo
 
       - name: Check out Renovate branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,6 +35,12 @@ jobs:
 
       - name: Trust GitHub workspace
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Configure build user
+        shell: bash
+        run: |
+          useradd --create-home builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
 
       - name: Update package metadata
         env:
@@ -60,9 +66,11 @@ jobs:
 
           for package in "${packages[@]}"; do
             (
-              cd "$package"
-              updpkgsums
-              makepkg --printsrcinfo > .SRCINFO
+              sudo --user=builder --set-home bash -c '
+                cd "$1"
+                updpkgsums
+                makepkg --printsrcinfo > .SRCINFO
+              ' -- "$package"
             )
           done
 
