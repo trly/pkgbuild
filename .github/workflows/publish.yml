@@ -1,0 +1,199 @@
+name: Publish main
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-main
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.package }})
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        package:
+          - 1password
+          - 1password-cli
+          - deja
+          - scip
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+    steps:
+      - name: Install tools
+        shell: bash
+        run: |
+          pacman -Syu --noconfirm --needed devtools git namcap sudo
+          systemd-machine-id-setup
+          printf '%s\n' '#!/bin/bash' 'exec /usr/bin/systemd-nspawn --keep-unit "$@"' > /usr/local/bin/systemd-nspawn
+          chmod 0755 /usr/local/bin/systemd-nspawn
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configure build user
+        shell: bash
+        run: |
+          useradd --create-home builder
+          printf 'builder ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/builder
+          chmod 0440 /etc/sudoers.d/builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+
+      - name: Check package metadata
+        env:
+          PACKAGE: ${{ matrix.package }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/$PACKAGE"
+          namcap PKGBUILD
+          sudo --user=builder --set-home bash -c 'makepkg --printsrcinfo > .SRCINFO.generated'
+          diff --unified .SRCINFO .SRCINFO.generated
+          rm .SRCINFO.generated
+
+      - name: Build package
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          sudo --user=builder --set-home "$GITHUB_WORKSPACE/build.sh" "$PACKAGE"
+
+      - name: Validate package archive
+        env:
+          PACKAGE: ${{ matrix.package }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find "$GITHUB_WORKSPACE/$PACKAGE" -type f -name '*.pkg.tar.zst' -print)
+          if (( ${#archives[@]} == 0 )); then
+            echo 'No package archives were built' >&2
+            exit 1
+          fi
+          namcap "${archives[@]}"
+
+      - name: Upload package archive
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-${{ matrix.package }}
+          path: ${{ matrix.package }}/*.pkg.tar.zst
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish packages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    environment: packages.trly.dev
+    steps:
+      - name: Download package archives
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: package-*
+          path: ${{ runner.temp }}/packages
+
+      - name: Install pkgdepot
+        env:
+          PKGDEPOT_VERSION: 0.1.0
+          PKGDEPOT_SHA256: bf2b55645378571b63819e5fa035160f5c65d1e0d99fa6bdca51aa38a32e9c3a
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          archive="pkgdepot_${PKGDEPOT_VERSION}_linux_amd64.tar.gz"
+          curl --fail --location --remote-name \
+            "https://github.com/trly/pkgdepot/releases/download/v${PKGDEPOT_VERSION}/${archive}"
+          printf '%s  %s\n' "$PKGDEPOT_SHA256" "$archive" | sha256sum --check
+          install_dir="$RUNNER_TEMP/pkgdepot/bin"
+          install --directory "$install_dir"
+          tar --extract --gzip --file "$archive" --directory "$install_dir" pkgdepot
+          printf '%s\n' "$install_dir" >> "$GITHUB_PATH"
+
+      - name: Confirm main is current
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          head_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)
+          if [[ "$head_sha" != "$GITHUB_SHA" ]]; then
+            echo "Refusing to publish superseded commit $GITHUB_SHA; main is at $head_sha" >&2
+            exit 1
+          fi
+
+      - name: Publish package archives
+        env:
+          PKGDEPOT_URL: https://packages.trly.dev
+          PKGDEPOT_CREDENTIAL: ${{ secrets.PKGDEPOT_CREDENTIAL }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t archives < <(find "$RUNNER_TEMP/packages" -type f -name '*.pkg.tar.zst' -print | sort)
+          if (( ${#archives[@]} == 0 )); then
+            echo 'No package archives were downloaded' >&2
+            exit 1
+          fi
+
+          declare -A local_filenames=()
+          for archive in "${archives[@]}"; do
+            filename=$(basename "$archive")
+            if [[ ${local_filenames["$filename"]+present} ]]; then
+              echo "Duplicate local package filename: $filename" >&2
+              exit 1
+            fi
+            local_filenames["$filename"]=1
+          done
+
+          changed_paths=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/compare/${GITHUB_EVENT_BEFORE}...${GITHUB_SHA}" \
+            --jq '.files[]?.filename')
+          declare -A changed_packages=()
+          while IFS= read -r path; do
+            [[ "$path" == */* ]] || continue
+            changed_packages["${path%%/*}"]=1
+          done <<< "$changed_paths"
+
+          existing_packages=$(pkgdepot package list stable)
+          existing_filenames=$(jq -r '.[].filename' <<< "$existing_packages")
+          declare -A published_filenames=()
+          while IFS= read -r filename; do
+            published_filenames["$filename"]=1
+          done <<< "$existing_filenames"
+
+          conflicts=0
+          for archive in "${archives[@]}"; do
+            filename=$(basename "$archive")
+            package_dir=$(basename "$(dirname "$archive")")
+            package_dir=${package_dir#package-}
+            if [[ ${published_filenames["$filename"]+present} ]] && \
+               [[ ${changed_packages["$package_dir"]+present} ]]; then
+              echo "Rebuilt package conflicts with an existing remote filename: $filename" >&2
+              conflicts=1
+            fi
+          done
+          if (( conflicts )); then
+            exit 1
+          fi
+
+          for archive in "${archives[@]}"; do
+            filename=$(basename "$archive")
+            if [[ ${published_filenames["$filename"]+present} ]]; then
+              echo "Skipping already published package $filename"
+              continue
+            fi
+            pkgdepot package publish stable "$archive"
+            published_filenames["$filename"]=1
+          done

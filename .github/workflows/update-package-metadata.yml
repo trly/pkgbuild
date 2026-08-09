@@ -7,6 +7,12 @@ on:
       - synchronize
     branches:
       - main
+    paths:
+      - '*/PKGBUILD'
+
+concurrency:
+  group: package-metadata-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -21,17 +27,17 @@ jobs:
     container:
       image: archlinux:base-devel
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Install tools
-        run: pacman -Syu --noconfirm --needed git pacman-contrib sudo
+        run: pacman -Syu --noconfirm --needed git github-cli pacman-contrib sudo
 
       - name: Check out Renovate branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref }}
-          token: ${{ secrets.METADATA_DISPATCH_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Trust GitHub workspace
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -75,12 +81,12 @@ jobs:
           done
 
       - name: Commit updated metadata
-        env:
-          GITHUB_HEAD_REF: ${{ github.head_ref }}
+        id: commit_updated_metadata
         shell: bash
         run: |
           set -euo pipefail
 
+          echo 'created=false' >> "$GITHUB_OUTPUT"
           git config user.name 'renovate[bot]'
           git config user.email '29139614+renovate[bot]@users.noreply.github.com'
           git add -- '*/PKGBUILD' '*/.SRCINFO'
@@ -89,4 +95,30 @@ jobs:
             exit 0
           fi
           git commit -m 'chore: update package metadata'
-          git push origin "HEAD:${GITHUB_HEAD_REF}"
+          echo 'created=true' >> "$GITHUB_OUTPUT"
+
+      # GITHUB_TOKEN commits do not trigger another workflow run, so the
+      # narrowly scoped PAT is used only for this final push.
+      - name: Push updated metadata
+        if: steps.commit_updated_metadata.outputs.created == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          METADATA_PUSH_TOKEN: ${{ secrets.METADATA_PUSH_TOKEN }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          current_head_sha=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/git/ref/heads/${GITHUB_HEAD_REF}" \
+            --jq .object.sha)
+          if [[ "$current_head_sha" != "$EXPECTED_HEAD_SHA" ]]; then
+            echo "Refusing to update superseded branch $GITHUB_HEAD_REF; expected $EXPECTED_HEAD_SHA, found $current_head_sha" >&2
+            exit 1
+          fi
+
+          auth_header=$(printf 'x-access-token:%s' "$METADATA_PUSH_TOKEN" | base64 --wrap=0)
+          git -c "http.extraheader=AUTHORIZATION: basic $auth_header" \
+            push --force-with-lease="refs/heads/${GITHUB_HEAD_REF}:${EXPECTED_HEAD_SHA}" \
+            origin "HEAD:refs/heads/${GITHUB_HEAD_REF}"

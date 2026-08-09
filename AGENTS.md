@@ -7,6 +7,7 @@
 - Use `pkgctl build` from the package directory to test a clean chroot build and inspect warnings; for dependencies from the AUR, provide built packages with `pkgctl build -I path/to/somepkg.tar.gz -I ...`.
 - CI runs the clean build as `sudo --user=builder --set-home pkgctl build` from the package directory; it requires an Arch `base-devel` environment and a non-root build user.
 - CI checks only packages whose directory contains a changed file and a `PKGBUILD`; changes outside package directories do not trigger package checks.
+- When adding a package, add its directory to the package matrix in `.github/workflows/publish.yml` so it is built and published on every main publication.
 - Package build outputs and downloaded sources (`pkg/`, `src/`, `*.pkg.tar.*`, `*.src.tar.*`, and package-specific source archives) are ignored; do not treat them as source changes.
 - Preserve the package-local `REUSE.toml` SPDX annotations when adding or changing package metadata files.
 

@@ -1,9 +1,6 @@
-name: Test changed packages
+name: CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
 
 permissions:
@@ -14,41 +11,180 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4
+
+      - name: Check shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t shell_scripts < <(git ls-files -- '*.sh')
+          if (( ${#shell_scripts[@]} == 0 )); then
+            echo 'No tracked shell scripts found' >&2
+            exit 1
+          fi
+          shellcheck --shell=bash "${shell_scripts[@]}"
+
+      - name: Check GitHub Actions workflows
+        run: actionlint
+
   discover:
     name: Discover packages
-    uses: ./.github/workflows/discover-packages.yml
-    with:
-      base_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before || '' }}
-      head_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.find.outputs.packages }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Find changed packages
+        id: find
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          empty_tree=$(git hash-object -t tree /dev/null)
+          diff_base=$empty_tree
+          if [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]] &&
+             git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null &&
+             git cat-file -e "${HEAD_SHA}^{commit}" 2>/dev/null; then
+            if merge_base=$(git merge-base "$BASE_SHA" "$HEAD_SHA"); then
+              diff_base=$merge_base
+            else
+              echo '::warning::Unable to find the PR merge-base; rebuilding all current packages.'
+            fi
+          else
+            echo '::warning::PR base or head commit is unavailable; rebuilding all current packages.'
+          fi
+
+          mapfile -t changed_files < <(git diff --name-only "$diff_base" "$HEAD_SHA")
+
+          rebuild_all=false
+          for path in "${changed_files[@]}"; do
+            # Keep this list limited to root inputs that can change package CI/build behavior.
+            # create.sh only scaffolds new packages and is intentionally linted, not global.
+            case "$path" in
+              build.sh|lint.sh|.github/workflows/test-packages.yml|.github/workflows/publish.yml)
+                rebuild_all=true
+                break
+                ;;
+            esac
+          done
+
+          if [[ "$rebuild_all" == true ]]; then
+            packages=$(
+              for pkgbuild in */PKGBUILD; do
+                [[ -f "$pkgbuild" ]] && printf '%s\n' "${pkgbuild%%/*}"
+              done
+            )
+          else
+            packages=$(
+              for path in "${changed_files[@]}"; do
+                package=${path%%/*}
+                if [[ "$path" == */* && -f "$package/PKGBUILD" ]]; then
+                  printf '%s\n' "$package"
+                fi
+              done | sort -u
+            )
+          fi
+
+          packages=$(jq -R -s -c 'split("\n") | map(select(. != ""))' <<< "$packages")
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
 
   build:
     name: Check and build packages
     needs: discover
     if: >-
-      needs.discover.outputs.packages != '[]' &&
-      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+      needs.discover.outputs.packages != '[]'
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
         package: ${{ fromJSON(needs.discover.outputs.packages) }}
-    uses: ./.github/workflows/build-package.yml
-    with:
-      package: ${{ matrix.package }}
-  required:
-    name: Required package checks
-    needs: [discover, build]
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+    steps:
+      - name: Install tools
+        shell: bash
+        run: |
+          pacman -Syu --noconfirm --needed devtools git namcap sudo
+          systemd-machine-id-setup
+          printf '%s\n' '#!/bin/bash' 'exec /usr/bin/systemd-nspawn --keep-unit "$@"' > /usr/local/bin/systemd-nspawn
+          chmod 0755 /usr/local/bin/systemd-nspawn
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configure build user
+        shell: bash
+        run: |
+          useradd --create-home builder
+          printf 'builder ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/builder
+          chmod 0440 /etc/sudoers.d/builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+
+      - name: Check package metadata
+        env:
+          PACKAGE: ${{ matrix.package }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/$PACKAGE"
+          namcap PKGBUILD
+          sudo --user=builder --set-home bash -c 'makepkg --printsrcinfo > .SRCINFO.generated'
+          diff --unified .SRCINFO .SRCINFO.generated
+          rm .SRCINFO.generated
+
+      - name: Build package
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          sudo --user=builder --set-home "$GITHUB_WORKSPACE/build.sh" "$PACKAGE"
+
+      - name: Validate package archive
+        env:
+          PACKAGE: ${{ matrix.package }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find "$GITHUB_WORKSPACE/$PACKAGE" -type f -name '*.pkg.tar.zst' -print)
+          if (( ${#archives[@]} == 0 )); then
+            echo 'No package archives were built' >&2
+            exit 1
+          fi
+          namcap "${archives[@]}"
+
+  ci:
+    name: CI
+    needs: [lint, discover, build]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Require successful package checks
+      - name: Require successful CI checks
         env:
           DISCOVERED_PACKAGES: ${{ needs.discover.outputs.packages }}
+          LINT_RESULT: ${{ needs.lint.result }}
           DISCOVER_RESULT: ${{ needs.discover.result }}
           BUILD_RESULT: ${{ needs.build.result }}
         shell: bash
         run: |
           set -euo pipefail
+
+          if [[ "$LINT_RESULT" != success ]]; then
+            echo "Lint checks did not succeed: $LINT_RESULT" >&2
+            exit 1
+          fi
 
           if [[ "$DISCOVER_RESULT" != success ]]; then
             echo "Package discovery did not succeed: $DISCOVER_RESULT" >&2
@@ -61,18 +197,6 @@ jobs:
           fi
 
           if [[ "$BUILD_RESULT" != success ]]; then
-            echo "Required package check did not succeed: build:$BUILD_RESULT" >&2
+            echo "Package checks did not succeed: build:$BUILD_RESULT" >&2
             exit 1
           fi
-
-  publish:
-    name: Publish packages
-    needs: [discover, build]
-    if: >-
-      success() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.build.result == 'success' && needs.discover.outputs.packages != '[]'
-    uses: ./.github/workflows/publish-packages.yml
-    permissions:
-      actions: read
-      contents: read
-    secrets: inherit
