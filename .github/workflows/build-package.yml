@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build (${{ inputs.package }})
+    name: Check and build (${{ inputs.package }})
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel
@@ -21,7 +21,7 @@ jobs:
       - name: Install tools
         shell: bash
         run: |
-          pacman -Syu --noconfirm --needed devtools git sudo
+          pacman -Syu --noconfirm --needed devtools git namcap sudo
           systemd-machine-id-setup
           printf '%s\n' '#!/bin/bash' 'exec /usr/bin/systemd-nspawn --keep-unit "$@"' > /usr/local/bin/systemd-nspawn
           chmod 0755 /usr/local/bin/systemd-nspawn
@@ -36,11 +36,36 @@ jobs:
           chmod 0440 /etc/sudoers.d/builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
 
+      - name: Check package metadata
+        env:
+          PACKAGE: ${{ inputs.package }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/$PACKAGE"
+          namcap PKGBUILD
+          sudo --user=builder --set-home bash -c 'makepkg --printsrcinfo > .SRCINFO.generated'
+          diff --unified .SRCINFO .SRCINFO.generated
+          rm .SRCINFO.generated
+
       - name: Build package
         env:
           PACKAGE: ${{ inputs.package }}
         run: |
           sudo --user=builder --set-home "$GITHUB_WORKSPACE/build.sh" "$PACKAGE"
+
+      - name: Validate package archive
+        env:
+          PACKAGE: ${{ inputs.package }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find "$GITHUB_WORKSPACE/$PACKAGE" -type f -name '*.pkg.tar.zst' -print)
+          if (( ${#archives[@]} == 0 )); then
+            echo 'No package archives were built' >&2
+            exit 1
+          fi
+          namcap "${archives[@]}"
 
       - name: Upload package archive
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -48,16 +73,4 @@ jobs:
           name: package-${{ inputs.package }}
           path: ${{ inputs.package }}/*.pkg.tar.zst
           if-no-files-found: error
-          retention-days: 1
-
-      - name: Write build marker
-        env:
-          PACKAGE: ${{ inputs.package }}
-        run: printf '%s\n' "$PACKAGE" > "$RUNNER_TEMP/package.txt"
-
-      - name: Upload build marker
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: build-passed-${{ inputs.package }}
-          path: ${{ runner.temp }}/package.txt
           retention-days: 1

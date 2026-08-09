@@ -3,16 +3,12 @@ name: ShellCheck
 on:
   push:
     paths:
-      - build.sh
-      - create.sh
-      - lint.sh
-      - .github/workflows/shellcheck.yml
+      - '**.sh'
+      - '.github/workflows/**'
   pull_request:
     paths:
-      - build.sh
-      - create.sh
-      - lint.sh
-      - .github/workflows/shellcheck.yml
+      - '**.sh'
+      - '.github/workflows/**'
 
 permissions:
   contents: read
@@ -29,3 +25,6 @@ jobs:
 
       - name: Check shell scripts
         run: shellcheck --shell=bash build.sh create.sh lint.sh
+
+      - name: Check GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12

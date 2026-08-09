@@ -55,7 +55,7 @@ jobs:
           rebuild_all=false
           for path in "${changed_files[@]}"; do
             case "$path" in
-              build.sh|lint.sh|.github/workflows/test-packages.yml|.github/workflows/discover-packages.yml|.github/workflows/lint-package.yml|.github/workflows/build-package.yml|.github/workflows/validate-package.yml)
+              build.sh|lint.sh|.github/workflows/test-packages.yml|.github/workflows/discover-packages.yml|.github/workflows/build-package.yml)
                 rebuild_all=true
                 break
                 ;;
