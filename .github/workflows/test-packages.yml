@@ -21,124 +21,23 @@ jobs:
       base_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before || '' }}
       head_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
-  lint:
-    name: Lint packages
-    needs: discover
-    if: needs.discover.outputs.packages != '[]'
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJSON(needs.discover.outputs.packages) }}
-    uses: ./.github/workflows/lint-package.yml
-    with:
-      package: ${{ matrix.package }}
-
-  collect-linted-packages:
-    name: Collect linted packages
-    needs: [discover, lint]
-    if: ${{ !cancelled() && needs.discover.outputs.packages != '' && needs.discover.outputs.packages != '[]' }}
-    runs-on: ubuntu-latest
-    outputs:
-      packages: ${{ steps.collect.outputs.packages }}
-    steps:
-      - name: Download lint markers
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: lint-passed-*
-          path: ${{ runner.temp }}/lint-markers
-        continue-on-error: true
-
-      - name: Collect packages
-        id: collect
-        env:
-          DISCOVERED_PACKAGES: ${{ needs.discover.outputs.packages }}
-        shell: bash
-        run: |
-          markers_dir=${{ runner.temp }}/lint-markers
-          passed_packages='[]'
-
-          if [[ -d "$markers_dir" ]]; then
-            passed_packages=$(find "$markers_dir" -type f -name package.txt -exec cat {} + |
-              jq -R -s -c 'split("\n") | map(select(. != ""))')
-          fi
-
-          packages=$(jq -cn \
-            --argjson discovered "$DISCOVERED_PACKAGES" \
-            --argjson passed "$passed_packages" \
-            '$discovered | map(select(. as $package | $passed | index($package)))')
-
-          echo "packages=$packages" >> "$GITHUB_OUTPUT"
-
   build:
-    name: Build packages
-    needs: collect-linted-packages
+    name: Check and build packages
+    needs: discover
     if: >-
-      needs.collect-linted-packages.outputs.packages != '[]' &&
+      needs.discover.outputs.packages != '[]' &&
       (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        package: ${{ fromJSON(needs.collect-linted-packages.outputs.packages) }}
+        package: ${{ fromJSON(needs.discover.outputs.packages) }}
     uses: ./.github/workflows/build-package.yml
     with:
       package: ${{ matrix.package }}
-
-  collect-built-packages:
-    name: Collect built packages
-    needs: [collect-linted-packages, build]
-    if: >-
-      ${{ !cancelled() &&
-      needs.collect-linted-packages.outputs.packages != '' &&
-      needs.collect-linted-packages.outputs.packages != '[]' &&
-      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-    runs-on: ubuntu-latest
-    outputs:
-      packages: ${{ steps.collect.outputs.packages }}
-    steps:
-      - name: Download build markers
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: build-passed-*
-          path: ${{ runner.temp }}/build-markers
-        continue-on-error: true
-
-      - name: Collect packages
-        id: collect
-        env:
-          LINTED_PACKAGES: ${{ needs.collect-linted-packages.outputs.packages }}
-        shell: bash
-        run: |
-          markers_dir=${{ runner.temp }}/build-markers
-          passed_packages='[]'
-
-          if [[ -d "$markers_dir" ]]; then
-            passed_packages=$(find "$markers_dir" -type f -name package.txt -exec cat {} + |
-              jq -R -s -c 'split("\n") | map(select(. != ""))')
-          fi
-
-          packages=$(jq -cn \
-            --argjson linted "$LINTED_PACKAGES" \
-            --argjson passed "$passed_packages" \
-            '$linted | map(select(. as $package | $passed | index($package)))')
-
-          echo "packages=$packages" >> "$GITHUB_OUTPUT"
-
-  validate:
-    name: Validate packages
-    needs: collect-built-packages
-    if: needs.collect-built-packages.outputs.packages != '[]'
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJSON(needs.collect-built-packages.outputs.packages) }}
-    uses: ./.github/workflows/validate-package.yml
-    with:
-      package: ${{ matrix.package }}
-
   required:
     name: Required package checks
-    needs: [discover, lint, build, validate]
+    needs: [discover, build]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -146,9 +45,7 @@ jobs:
         env:
           DISCOVERED_PACKAGES: ${{ needs.discover.outputs.packages }}
           DISCOVER_RESULT: ${{ needs.discover.result }}
-          LINT_RESULT: ${{ needs.lint.result }}
           BUILD_RESULT: ${{ needs.build.result }}
-          VALIDATE_RESULT: ${{ needs.validate.result }}
         shell: bash
         run: |
           set -euo pipefail
@@ -163,22 +60,17 @@ jobs:
             exit 0
           fi
 
-          for check in \
-            "lint:$LINT_RESULT" \
-            "build:$BUILD_RESULT" \
-            "validate:$VALIDATE_RESULT"; do
-            if [[ "$check" != *:success ]]; then
-              echo "Required package check did not succeed: $check" >&2
-              exit 1
-            fi
-          done
+          if [[ "$BUILD_RESULT" != success ]]; then
+            echo "Required package check did not succeed: build:$BUILD_RESULT" >&2
+            exit 1
+          fi
 
   publish:
     name: Publish packages
-    needs: [lint, build, collect-built-packages, validate]
+    needs: [discover, build]
     if: >-
       success() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.collect-built-packages.outputs.packages != '[]'
+      needs.build.result == 'success' && needs.discover.outputs.packages != '[]'
     uses: ./.github/workflows/publish-packages.yml
     permissions:
       actions: read
