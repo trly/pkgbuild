@@ -1,6 +1,6 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=spotatui-bin
-pkgver=0.40.3 # renovate: datasource=github-tags depName=LargeModGames/spotatui
+pkgver=0.41.0 # renovate: datasource=github-tags depName=LargeModGames/spotatui
 pkgrel=1
 pkgdesc="A Spotify client for the terminal written in Rust, powered by Ratatui"
 arch=('x86_64')
