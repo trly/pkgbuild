@@ -12,6 +12,18 @@
         "github-actions"
       ],
       "pinDigests": true
+    },
+    {
+      "description": "Update Arch Linux container images monthly",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "archlinux"
+      ],
+      "schedule": [
+        "monthly"
+      ]
     }
   ],
   "customManagers": [
