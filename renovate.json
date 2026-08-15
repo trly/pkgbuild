@@ -2,7 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "enabledManagers": [
     "custom.regex",
-    "github-actions"
+    "github-actions",
+    "mise"
   ],
   "dependencyDashboard": false,
   "packageRules": [
@@ -12,6 +13,24 @@
         "github-actions"
       ],
       "pinDigests": true
+    },
+    {
+      "description": "Update GitHub Actions monthly",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "schedule": [
+        "monthly"
+      ]
+    },
+    {
+      "description": "Update mise tools monthly",
+      "matchManagers": [
+        "mise"
+      ],
+      "schedule": [
+        "monthly"
+      ]
     },
     {
       "description": "Update Arch Linux container images monthly",
