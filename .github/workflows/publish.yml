@@ -26,6 +26,7 @@ jobs:
           - 1password
           - 1password-cli
           - deja
+          - pkgdepot-bin
           - scip
           - spotatui
     runs-on: ubuntu-latest
