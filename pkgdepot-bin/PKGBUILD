@@ -10,7 +10,7 @@ provides=("pkgdepot=${pkgver}")
 conflicts=('pkgdepot')
 options=('!debug' '!strip')
 source=("${pkgname}-${pkgver}-linux-amd64.tar.gz::${url}/releases/download/v${pkgver}/pkgdepot_${pkgver}_linux_amd64.tar.gz")
-sha256sums=('441ff17351e6ab06c1e59b07353976080d570bb5359cdc3a76ea1f81dd13d7eb')
+sha256sums=('ee0c2136487e049e063726e0772e71cd20a512b63cdf1c8043cbfd4ae9dbf69d')
 
 package() {
   install -Dm755 pkgdepot "${pkgdir}/usr/bin/pkgdepot"
