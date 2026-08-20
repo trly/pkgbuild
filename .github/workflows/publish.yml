@@ -107,8 +107,8 @@ jobs:
 
       - name: Install pkgdepot
         env:
-          PKGDEPOT_VERSION: 0.1.0
-          PKGDEPOT_SHA256: bf2b55645378571b63819e5fa035160f5c65d1e0d99fa6bdca51aa38a32e9c3a
+          PKGDEPOT_VERSION: 0.2.1
+          PKGDEPOT_SHA256: 441ff17351e6ab06c1e59b07353976080d570bb5359cdc3a76ea1f81dd13d7eb
         shell: bash
         run: |
           set -euo pipefail
@@ -138,7 +138,9 @@ jobs:
       - name: Publish package archives
         env:
           PKGDEPOT_URL: https://packages.trly.dev
-          PKGDEPOT_CREDENTIAL: ${{ secrets.PKGDEPOT_CREDENTIAL }}
+          PKGDEPOT_OAUTH_ISSUER: https://id.trly.dev
+          PKGDEPOT_OAUTH_CLIENT_ID: ${{ secrets.PKGDEPOT_OAUTH_CLIENT_ID }}
+          PKGDEPOT_OAUTH_CLIENT_SECRET: ${{ secrets.PKGDEPOT_OAUTH_CLIENT_SECRET }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         shell: bash
