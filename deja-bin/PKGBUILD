@@ -1,7 +1,7 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=deja-bin
 pkgver=0.4.1 # renovate: datasource=github-tags depName=Giammarco-Ferranti/deja
-pkgrel=1
+pkgrel=2
 pkgdesc="Predictive inline shell autosuggestions for zsh"
 arch=('x86_64' 'aarch64')
 url="https://github.com/Giammarco-Ferranti/deja"
