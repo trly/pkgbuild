@@ -1,0 +1,42 @@
+pkgbase = spotify-bin
+	pkgdesc = Spotify desktop client
+	pkgver = 1.2.96.518.g366879e1
+	pkgrel = 1
+	epoch = 1
+	url = https://www.spotify.com
+	arch = x86_64
+	license = LicenseRef-Spotify
+	depends = alsa-lib>=1.0.14
+	depends = gtk3
+	depends = libxss
+	depends = desktop-file-utils
+	depends = openssl
+	depends = nss
+	depends = at-spi2-atk
+	depends = libcurl-gnutls
+	depends = libsm
+	depends = libayatana-appindicator
+	optdepends = ffmpeg4.4: Adds support for playback of local files
+	optdepends = zenity: Adds support for importing local files
+	optdepends = libnotify: Desktop notifications
+	provides = spotify=1:1.2.96.518.g366879e1
+	conflicts = spotify
+	options = !debug
+	options = !strip
+	source = https://repository.spotify.com/pool/non-free/s/spotify-client/spotify-client_1.2.96.518.g366879e1_amd64.deb
+	source = spotify.sh
+	source = spotify.protocol
+	source = LICENSE
+	source = spotify-bin-1.2.96.518.g366879e1-1-Release::https://repository.spotify.com/dists/testing/Release
+	source = spotify-bin-1.2.96.518.g366879e1-1-Release.gpg::https://repository.spotify.com/dists/testing/Release.gpg
+	source = spotify-bin-1.2.96.518.g366879e1-1-Packages::https://repository.spotify.com/dists/testing/non-free/binary-amd64/Packages
+	validpgpkeys = E1096BCBFF6D418796DE78515384CE82BA52C83A
+	sha256sums = 1a86581f53c2b0e2c406150665ea05e245b9e6b286390ea61d5d193ba617eb2f
+	sha256sums = 764cf7d24c35e3327cef4c0469351dabbf8b1edbaa10e1f35f64c91f135b31d9
+	sha256sums = af54f3b90cac46fa100b3f919a9225d10d847617d24aa9af3d832e7689f482c3
+	sha256sums = 4e8bea31ca27e16cac9c9dcd8f6ec27e1f82b45de86d6fee7a1e77e23f884b92
+	sha256sums = SKIP
+	sha256sums = SKIP
+	sha256sums = SKIP
+
+pkgname = spotify-bin
