@@ -1,0 +1,117 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+# Contributor: Christian Heusel <christian@heusel.eu>
+# Contributor: Robin Candau <antiz@archlinux.org>
+# Contributor: NicoHood <archlinux {cat} nicohood {dog} de>
+# Contributor: TobFromme < TobFromme {hat} pm {dont} me >
+# Contributor: Ashley Whetter <(firstname) @ awhetter.co.uk>
+# Contributor: Eothred <yngve.levinsen@gmail.com>
+# 
+# Adapted from https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spotify
+pkgname=spotify-bin
+pkgver=1.2.96.518.g366879e1 # renovate: datasource=deb depName=spotify-client
+epoch=1
+pkgrel=1
+pkgdesc='Spotify desktop client'
+arch=('x86_64')
+url='https://www.spotify.com'
+license=('LicenseRef-Spotify')
+depends=(
+  'alsa-lib>=1.0.14'
+  'gtk3'
+  'libxss'
+  'desktop-file-utils'
+  'openssl'
+  'nss'
+  'at-spi2-atk'
+  'libcurl-gnutls'
+  'libsm'
+  'libayatana-appindicator'
+)
+optdepends=(
+  'ffmpeg4.4: Adds support for playback of local files'
+  'zenity: Adds support for importing local files'
+  'libnotify: Desktop notifications'
+)
+provides=("spotify=1:${pkgver}")
+conflicts=('spotify')
+options=('!debug' '!strip')
+source=("https://repository.spotify.com/pool/non-free/s/spotify-client/spotify-client_${pkgver}_amd64.deb"
+        "spotify.sh"
+        "spotify.protocol"
+        "LICENSE"
+        "${pkgname}-${pkgver}-${pkgrel}-Release::https://repository.spotify.com/dists/testing/Release"
+        "${pkgname}-${pkgver}-${pkgrel}-Release.gpg::https://repository.spotify.com/dists/testing/Release.gpg"
+        "${pkgname}-${pkgver}-${pkgrel}-Packages::https://repository.spotify.com/dists/testing/non-free/binary-amd64/Packages")
+sha256sums=('1a86581f53c2b0e2c406150665ea05e245b9e6b286390ea61d5d193ba617eb2f'
+            '764cf7d24c35e3327cef4c0469351dabbf8b1edbaa10e1f35f64c91f135b31d9'
+            'af54f3b90cac46fa100b3f919a9225d10d847617d24aa9af3d832e7689f482c3'
+            '4e8bea31ca27e16cac9c9dcd8f6ec27e1f82b45de86d6fee7a1e77e23f884b92'
+            'SKIP'
+            'SKIP'
+            'SKIP')
+# The Release, signature, and Packages files change with every upstream
+# publication, so their checksums are SKIPped. updpkgsums and pkgctl rewrite
+# literal checksum arrays, which would leave stale hashes behind; indexed
+# assignments after the array survive those rewrites (pacman-contrib#119).
+sha256sums[4]='SKIP'
+sha256sums[5]='SKIP'
+sha256sums[6]='SKIP'
+validpgpkeys=('E1096BCBFF6D418796DE78515384CE82BA52C83A') # Spotify Public Repository Signing Key <tux@spotify.com>
+
+verify() {
+  local release="${pkgname}-${pkgver}-${pkgrel}-Release"
+  local packages="${pkgname}-${pkgver}-${pkgrel}-Packages"
+  local key="keys/pgp/${validpgpkeys[0]}.asc"
+  local verifydir
+  verifydir="$(mktemp -d)"
+  install -dm700 "${verifydir}/gnupg"
+
+  local status
+  if gpg --batch --homedir "${verifydir}/gnupg" --import "${key}" &&
+    gpg --batch --homedir "${verifydir}/gnupg" \
+      --assert-signer "${validpgpkeys[0]}" \
+      --verify "${SRCDEST}/${release}.gpg" "${SRCDEST}/${release}" &&
+    echo "$(awk '/^SHA256:$/{section=1; next} /^$/{section=0} section && / non-free\/binary-amd64\/Packages$/ {print $1}' "${SRCDEST}/${release}") ${SRCDEST}/${packages}" \
+      | sha256sum -c - &&
+    echo "$(awk -F': ' '$1 == "SHA512" {print $2}' "${SRCDEST}/${packages}") ${SRCDEST}/spotify-client_${pkgver}_amd64.deb" \
+      | sha512sum -c -; then
+    status=0
+  else
+    status=$?
+  fi
+
+  rm -rf "${verifydir}"
+  return "${status}"
+}
+
+package() {
+  tar -xzf data.tar.gz --no-same-owner -C "${pkgdir}"
+
+  # Enable spotify to open URLs from the webapp
+  sed -i 's/^Exec=.*/Exec=spotify --uri=%u/' "${pkgdir}/usr/share/spotify/spotify.desktop"
+
+  install -Dm644 "${pkgdir}/usr/share/spotify/spotify.desktop" "${pkgdir}/usr/share/applications/spotify.desktop"
+  install -Dm644 "${pkgdir}/usr/share/spotify/icons/spotify-linux-512.png" "${pkgdir}/usr/share/pixmaps/spotify-client.png"
+
+  for size in 22 24 32 48 64 128 256 512; do
+    install -Dm644 "${pkgdir}/usr/share/spotify/icons/spotify-linux-${size}.png" \
+      "${pkgdir}/usr/share/icons/hicolor/${size}x${size}/apps/spotify.png"
+  done
+
+  # Move spotify binary to its proper location
+  mkdir -p "${pkgdir}/opt/spotify"
+  mv "${pkgdir}/usr/share/spotify" "${pkgdir}/opt/"
+
+  # Copy launch script which allows the use of custom flags
+  install -Dm755 spotify.sh "${pkgdir}/usr/bin/spotify"
+
+  # Copy protocol file for KDE
+  install -Dm644 spotify.protocol "${pkgdir}/usr/share/kservices5/spotify.protocol"
+
+  # Install license
+  # https://www.spotify.com/legal/end-user-agreement
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+
+  # Fix permissions
+  chmod -R go-w "${pkgdir}"
+}

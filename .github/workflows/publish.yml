@@ -28,6 +28,7 @@ jobs:
           - deja
           - pkgdepot-bin
           - scip
+          - spotify-bin
           - spotatui
     runs-on: ubuntu-latest
     container:

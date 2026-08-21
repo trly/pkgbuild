@@ -1,0 +1,7 @@
+version = 1
+
+[[annotations]]
+path = [".gitignore", ".SRCINFO", "LICENSE", "PKGBUILD", "keys/**", "spotify.protocol", "spotify.sh"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Arch Linux Contributors"
+SPDX-License-Identifier = "0BSD"

@@ -43,6 +43,19 @@
       "schedule": [
         "monthly"
       ]
+    },
+    {
+      "description": "Spotify distributes through its own Debian repository",
+      "matchDatasources": [
+        "deb"
+      ],
+      "matchPackageNames": [
+        "spotify-client"
+      ],
+      "registryUrls": [
+        "https://repository.spotify.com?suite=testing&components=non-free&binaryArch=amd64"
+      ],
+      "extractVersion": "^[0-9]+:(.+)$"
     }
   ],
   "customManagers": [
