@@ -9,7 +9,6 @@
 # Adapted from https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spotify
 pkgname=spotify-bin
 pkgver=1.2.96.518.g366879e1 # renovate: datasource=deb depName=spotify-client
-epoch=1
 pkgrel=1
 pkgdesc='Spotify desktop client'
 arch=('x86_64')
@@ -32,7 +31,7 @@ optdepends=(
   'zenity: Adds support for importing local files'
   'libnotify: Desktop notifications'
 )
-provides=("spotify=1:${pkgver}")
+provides=("spotify=${pkgver}")
 conflicts=('spotify')
 options=('!debug' '!strip')
 source=("https://repository.spotify.com/pool/non-free/s/spotify-client/spotify-client_${pkgver}_amd64.deb"
