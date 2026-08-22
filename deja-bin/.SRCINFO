@@ -1,7 +1,7 @@
 pkgbase = deja-bin
 	pkgdesc = Predictive inline shell autosuggestions for zsh
 	pkgver = 0.4.1
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/Giammarco-Ferranti/deja
 	arch = x86_64
 	arch = aarch64
