@@ -40,69 +40,25 @@ jobs:
     name: Discover packages
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.find.outputs.packages }}
+      packages: ${{ steps.plan.outputs.packages }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ github.sha }}
 
-      - name: Find changed packages
-        id: find
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          empty_tree=$(git hash-object -t tree /dev/null)
-          diff_base=$empty_tree
-          if [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]] &&
-             git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null &&
-             git cat-file -e "${HEAD_SHA}^{commit}" 2>/dev/null; then
-            if merge_base=$(git merge-base "$BASE_SHA" "$HEAD_SHA"); then
-              diff_base=$merge_base
-            else
-              echo '::warning::Unable to find the PR merge-base; rebuilding all current packages.'
-            fi
-          else
-            echo '::warning::PR base or head commit is unavailable; rebuilding all current packages.'
-          fi
-
-          mapfile -t changed_files < <(git diff --name-only "$diff_base" "$HEAD_SHA")
-
-          rebuild_all=false
-          for path in "${changed_files[@]}"; do
-            # Keep this list limited to root inputs that can change package CI/build behavior.
-            # create.sh only scaffolds new packages and is intentionally linted, not global.
-            case "$path" in
-              build.sh|lint.sh|.github/workflows/test-packages.yml)
-                rebuild_all=true
-                break
-                ;;
-            esac
-          done
-
-          if [[ "$rebuild_all" == true ]]; then
-            packages=$(
-              for pkgbuild in */PKGBUILD; do
-                [[ -f "$pkgbuild" ]] && printf '%s\n' "${pkgbuild%%/*}"
-              done
-            )
-          else
-            packages=$(
-              for path in "${changed_files[@]}"; do
-                package=${path%%/*}
-                if [[ "$path" == */* && -f "$package/PKGBUILD" ]]; then
-                  printf '%s\n' "$package"
-                fi
-              done | sort -u
-            )
-          fi
-
-          packages=$(jq -R -s -c 'split("\n") | map(select(. != ""))' <<< "$packages")
-          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+      - id: plan
+        uses: ./.github/actions/discover-packages
+        with:
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          # Shared inputs that change how every package is checked or built, so
+          # a change to one has to be validated against the full matrix.
+          # create.sh only scaffolds new packages and is intentionally omitted.
+          full-rebuild-paths: |
+            build.sh
+            lint.sh
+            .github/workflows/test-packages.yml
+            .github/actions/discover-packages/*
 
   build:
     name: Check and build packages

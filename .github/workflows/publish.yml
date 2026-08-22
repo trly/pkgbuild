@@ -16,20 +16,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  plan:
+    name: Plan
+    # A force push rewrites history, so the pushed diff describes nothing that
+    # was reviewed and github.event.before may not even be reachable. Skipping
+    # plan skips build and publish with it; recover with an ordinary push.
+    if: ${{ !github.event.forced && !github.event.deleted }}
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.plan.outputs.packages }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # full-rebuild-paths is deliberately unset and require-base deliberately
+      # set: both defaults widen the selection to every package, which here
+      # would rebuild already published filenames and trip the immutability
+      # guard below. Full-matrix validation is the pull request pipeline's job.
+      - id: plan
+        uses: ./.github/actions/discover-packages
+        with:
+          base-sha: ${{ github.event.before }}
+          head-sha: ${{ github.sha }}
+          require-base: 'true'
+
+      - name: Confirm main is current
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          head_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)
+          if [[ "$head_sha" != "$GITHUB_SHA" ]]; then
+            echo "Refusing to publish superseded commit $GITHUB_SHA; main is at $head_sha" >&2
+            exit 1
+          fi
+
   build:
     name: Build (${{ matrix.package }})
+    needs: plan
+    if: needs.plan.outputs.packages != '[]'
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        package:
-          - 1password
-          - 1password-cli
-          - deja
-          - pkgdepot-bin
-          - scip
-          - spotify-bin
-          - spotatui
+        package: ${{ fromJSON(needs.plan.outputs.packages) }}
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel@sha256:ee205c220399524a683cf495d411691b921baed8ab47cdc6d732efa782fae484
@@ -93,19 +126,25 @@ jobs:
           retention-days: 1
 
   publish:
-    name: Publish packages
-    needs: build
+    name: Publish (${{ matrix.package }})
+    needs: [plan, build]
+    if: needs.plan.outputs.packages != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        package: ${{ fromJSON(needs.plan.outputs.packages) }}
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
     environment: packages.trly.dev
     steps:
-      - name: Download package archives
+      - name: Download package archive
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          pattern: package-*
-          path: ${{ runner.temp }}/packages
+          name: package-${{ matrix.package }}
+          path: ${{ runner.temp }}/packages/${{ matrix.package }}
 
       - name: Install pkgdepot
         env:
@@ -124,6 +163,8 @@ jobs:
           tar --extract --gzip --file "$archive" --directory "$install_dir" pkgdepot
           printf '%s\n' "$install_dir" >> "$GITHUB_PATH"
 
+      # Re-checked here, not just in plan: the build runs between the two jobs,
+      # so the plan-time check no longer covers the moment of the write.
       - name: Confirm main is current
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -143,8 +184,6 @@ jobs:
           PKGDEPOT_OAUTH_ISSUER: https://id.trly.dev
           PKGDEPOT_OAUTH_CLIENT_ID: ${{ secrets.PKGDEPOT_OAUTH_CLIENT_ID }}
           PKGDEPOT_OAUTH_CLIENT_SECRET: ${{ secrets.PKGDEPOT_OAUTH_CLIENT_SECRET }}
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         shell: bash
         run: |
           set -euo pipefail
@@ -155,53 +194,16 @@ jobs:
             exit 1
           fi
 
-          declare -A local_filenames=()
-          for archive in "${archives[@]}"; do
-            filename=$(basename "$archive")
-            if [[ ${local_filenames["$filename"]+present} ]]; then
-              echo "Duplicate local package filename: $filename" >&2
-              exit 1
-            fi
-            local_filenames["$filename"]=1
-          done
-
-          changed_paths=$(gh api \
-            "repos/${GITHUB_REPOSITORY}/compare/${GITHUB_EVENT_BEFORE}...${GITHUB_SHA}" \
-            --jq '.files[]?.filename')
-          declare -A changed_packages=()
-          while IFS= read -r path; do
-            [[ "$path" == */* ]] || continue
-            changed_packages["${path%%/*}"]=1
-          done <<< "$changed_paths"
-
-          existing_packages=$(pkgdepot package list stable)
-          existing_filenames=$(jq -r '.[].filename' <<< "$existing_packages")
           declare -A published_filenames=()
           while IFS= read -r filename; do
             published_filenames["$filename"]=1
-          done <<< "$existing_filenames"
-
-          conflicts=0
-          for archive in "${archives[@]}"; do
-            filename=$(basename "$archive")
-            package_dir=$(basename "$(dirname "$archive")")
-            package_dir=${package_dir#package-}
-            if [[ ${published_filenames["$filename"]+present} ]] && \
-               [[ ${changed_packages["$package_dir"]+present} ]]; then
-              echo "Rebuilt package conflicts with an existing remote filename: $filename" >&2
-              conflicts=1
-            fi
-          done
-          if (( conflicts )); then
-            exit 1
-          fi
+          done < <(pkgdepot package list stable | jq -r '.[].filename')
 
           for archive in "${archives[@]}"; do
             filename=$(basename "$archive")
             if [[ ${published_filenames["$filename"]+present} ]]; then
-              echo "Skipping already published package $filename"
-              continue
+              echo "Refusing to overwrite published package $filename" >&2
+              exit 1
             fi
             pkgdepot package publish stable "$archive"
-            published_filenames["$filename"]=1
           done
