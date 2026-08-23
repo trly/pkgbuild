@@ -6,6 +6,7 @@
     "mise"
   ],
   "dependencyDashboard": false,
+  "automerge": true,
   "packageRules": [
     {
       "description": "Pin GitHub Actions to immutable commit SHAs",
