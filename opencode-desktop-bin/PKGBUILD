@@ -1,0 +1,39 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+pkgname=opencode-desktop-bin
+pkgver=1.18.21 # renovate: datasource=github-tags depName=anomalyco/opencode
+pkgrel=1
+pkgdesc="Open source AI coding agent desktop client"
+arch=('x86_64')
+url="https://opencode.ai"
+license=('MIT')
+depends=('alsa-lib' 'at-spi2-core' 'cairo' 'dbus' 'expat' 'glib2' 'glibc'
+         'gtk3' 'hicolor-icon-theme' 'libcups' 'libdrm' 'libgcc' 'libnotify' 'libsecret' 'libstdc++' 'libx11' 'libxcb'
+         'libxcomposite' 'libxdamage' 'libxext' 'libxfixes' 'libxkbcommon'
+         'libxrandr' 'libxss' 'libxtst' 'mesa' 'nspr' 'nss' 'pango' 'ripgrep'
+         'systemd-libs' 'util-linux-libs' 'xdg-utils')
+optdepends=('libappindicator-gtk3: tray icon support')
+provides=('opencode')
+conflicts=('opencode-desktop')
+options=('!debug' '!strip')
+source=("LICENSE-${pkgver}::https://raw.githubusercontent.com/anomalyco/opencode/v${pkgver}/LICENSE")
+source_x86_64=("${pkgname}-${pkgver}-amd64.deb::https://github.com/anomalyco/opencode/releases/download/v${pkgver}/opencode-desktop-linux-amd64.deb")
+noextract=("${pkgname}-${pkgver}-amd64.deb")
+sha256sums=('625f0f619133f89bbbb2abe37369613dfa1885eba1e50d02170deb62bb42cb6b')
+sha256sums_x86_64=('5d5149057674388c73f3b8a6d3e776cba6fa75b26536482dbf03ff6e53d4fc26')
+
+package() {
+  bsdtar -xf "${pkgname}-${pkgver}-amd64.deb" data.tar.xz
+  bsdtar --no-same-owner -xf data.tar.xz -C "${pkgdir}"
+
+  rm -rf "${pkgdir}/usr/share/doc"
+  rm -f "${pkgdir}/opt/OpenCode/resources/app-update.yml" \
+        "${pkgdir}/opt/OpenCode/resources/apparmor-profile" \
+        "${pkgdir}/opt/OpenCode/resources/package-type" \
+        "${pkgdir}/opt/OpenCode/resources/app.asar.unpacked/node_modules/@msgpackr-extract/msgpackr-extract-linux-x64/node.napi.musl.node" \
+        "${pkgdir}/opt/OpenCode/resources/app.asar.unpacked/node_modules/@msgpackr-extract/msgpackr-extract-linux-x64/node.abi115.musl.node"
+  rm -rf "${pkgdir}/opt/OpenCode/resources/app.asar.unpacked/node_modules/@parcel/watcher-linux-x64-musl"
+  install -Dm644 "LICENSE-${pkgver}" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+
+  # Electron's sandbox requires the setuid bit.
+  chmod 4755 "${pkgdir}/opt/OpenCode/chrome-sandbox"
+}
