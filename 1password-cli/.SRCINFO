@@ -1,20 +1,17 @@
 pkgbase = 1password-cli
 	pkgdesc = Command-line interface for 1Password
-	pkgver = 2.38.1
-	pkgrel = 2
+	pkgver = 2.39.0
+	pkgrel = 1
 	url = https://developer.1password.com/docs/cli/
 	install = 1password-cli.install
 	arch = x86_64
-	arch = aarch64
 	license = LicenseRef-1Password-Proprietary
 	options = !debug
 	options = !strip
 	source = 1password-cli.license
 	validpgpkeys = 3FEF9748469ADBE15DA7CA80AC2D62742012EA22
 	sha256sums = dae49a8282b3ed44b430da3b05293a5cd5b5b59a4b87075c211f2b9e1692f4cf
-	source_x86_64 = https://cache.agilebits.com/dist/1P/op2/pkg/v2.38.1/op_linux_amd64_v2.38.1.zip
-	sha256sums_x86_64 = 7a7b7168f521d31838f0cc59abf172527853308c9b9cceee34895121acb0be0f
-	source_aarch64 = https://cache.agilebits.com/dist/1P/op2/pkg/v2.38.1/op_linux_arm64_v2.38.1.zip
-	sha256sums_aarch64 = 854f92932dcfebc26434e83e426729933a8d0aae447889e439cf01f1b213a7fd
+	source_x86_64 = https://cache.agilebits.com/dist/1P/op2/pkg/v2.39.0/op_linux_amd64_v2.39.0.zip
+	sha256sums_x86_64 = 6fba7f376b6c6dec49f41b06408930a43ad064cce103c6a2ce5b3d0413a86434
 
 pkgname = 1password-cli

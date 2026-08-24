@@ -1,10 +1,9 @@
 pkgbase = deja-bin
 	pkgdesc = Predictive inline shell autosuggestions for zsh
 	pkgver = 0.4.1
-	pkgrel = 2
+	pkgrel = 3
 	url = https://github.com/Giammarco-Ferranti/deja
 	arch = x86_64
-	arch = aarch64
 	license = MIT
 	depends = glibc
 	depends = zsh
@@ -14,7 +13,5 @@ pkgbase = deja-bin
 	options = !strip
 	source_x86_64 = https://github.com/Giammarco-Ferranti/deja/releases/download/v0.4.1/deja_0.4.1_linux_amd64.tar.gz
 	sha256sums_x86_64 = 856ed143d73e1c1350ffd3f410300d40877b08bc3c8121006424f0ee61b4d68a
-	source_aarch64 = https://github.com/Giammarco-Ferranti/deja/releases/download/v0.4.1/deja_0.4.1_linux_arm64.tar.gz
-	sha256sums_aarch64 = da3ddb09d13e22d971946364f53084292f84ff88b99d01ec64adc9949270f38e
 
 pkgname = deja-bin

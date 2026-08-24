@@ -4,3 +4,4 @@
 /*.src.tar.*
 /1password-*.tar.gz
 /1password-*.tar.gz.sig
+/1password-*.tar.gz.signature

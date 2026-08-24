@@ -1,0 +1,5 @@
+/pkg/
+/src/
+/*.pkg.tar.*
+/*.src.tar.*
+/pkgdepot-bin-*.tar.gz

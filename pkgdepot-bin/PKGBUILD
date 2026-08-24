@@ -1,7 +1,7 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=pkgdepot-bin
 pkgver=0.3.0 # renovate: datasource=github-tags depName=trly/pkgdepot
-pkgrel=1
+pkgrel=2
 pkgdesc="Arch Linux package repository server"
 arch=('x86_64')
 url="https://github.com/trly/pkgdepot"

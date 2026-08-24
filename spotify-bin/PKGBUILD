@@ -9,7 +9,7 @@
 # Adapted from https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spotify
 pkgname=spotify-bin
 pkgver=1.2.96.518.g366879e1 # renovate: datasource=deb depName=spotify-client
-pkgrel=1
+pkgrel=2
 pkgdesc='Spotify desktop client'
 arch=('x86_64')
 url='https://www.spotify.com'
@@ -25,6 +25,7 @@ depends=(
   'libcurl-gnutls'
   'libsm'
   'libayatana-appindicator'
+  'libdbusmenu-glib'
 )
 optdepends=(
   'ffmpeg4.4: Adds support for playback of local files'

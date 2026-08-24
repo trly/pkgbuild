@@ -77,7 +77,7 @@ jobs:
       - name: Install tools
         shell: bash
         run: |
-          pacman -Syu --noconfirm --needed devtools git namcap sudo
+          pacman -Syu --noconfirm --needed devtools git namcap python sudo
           systemd-machine-id-setup
           printf '%s\n' '#!/bin/bash' 'exec /usr/bin/systemd-nspawn --keep-unit "$@"' > /usr/local/bin/systemd-nspawn
           chmod 0755 /usr/local/bin/systemd-nspawn
