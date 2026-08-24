@@ -2,41 +2,31 @@
 pkgname=1password
 _tarver=8.12.30
 pkgver=${_tarver//-/_}
-pkgrel=3
+pkgrel=5
 pkgdesc="Password manager and secure wallet"
-arch=('x86_64' 'aarch64')
+arch=('x86_64')
 url="https://1password.com"
 license=('LicenseRef-1Password-Proprietary')
-depends=('alsa-lib' 'at-spi2-core' 'cairo' 'dbus' 'expat' 'glib2' 'gtk3'
+depends=('alsa-lib' 'at-spi2-core' 'cairo' 'dbus' 'expat' 'glib2' 'glibc' 'gtk3'
          'hicolor-icon-theme' 'libcups' 'libx11' 'libxcb' 'libxcomposite'
          'libxdamage' 'libxext' 'libxfixes' 'libxkbcommon' 'libxrandr' 'mesa'
-         'nspr' 'nss' 'pango' 'systemd-libs' 'xdg-utils' 'zlib')
+         'libgcc' 'nspr' 'nss' 'pango' 'systemd-libs' 'xdg-utils' 'zlib')
 conflicts=('1password-beta' '1password-beta-bin')
 options=('!debug' '!strip')
 install=1password.install
 backup=('etc/1password/custom_allowed_browsers')
 source=('1password.license')
+noextract=("1password-${_tarver}.x64.tar.gz")
 source_x86_64=("https://downloads.1password.com/linux/tar/stable/${CARCH}/1password-${_tarver}.x64.tar.gz"
-              "1password-${_tarver}.x64.tar.gz.signature::https://downloads.1password.com/linux/tar/stable/${CARCH}/1password-${_tarver}.x64.tar.gz.sig")
-source_aarch64=("https://downloads.1password.com/linux/tar/stable/aarch64/1password-${_tarver}.arm64.tar.gz"
-                "1password-${_tarver}.arm64.tar.gz.signature::https://downloads.1password.com/linux/tar/stable/aarch64/1password-${_tarver}.arm64.tar.gz.sig")
-noextract=("1password-${_tarver}.x64.tar.gz"
-           "1password-${_tarver}.arm64.tar.gz")
+               "1password-${_tarver}.x64.tar.gz.signature::https://downloads.1password.com/linux/tar/stable/${CARCH}/1password-${_tarver}.x64.tar.gz.sig")
 sha256sums=('b4b4a183f41fcd6610b61e73afba2cab8ee194ab9de2112473be6137f196d818')
 sha256sums_x86_64=('8d9b8f750a3928fbdb62a37961716ade5004a8971c5a18ba44e14e4af8e25ae5'
                    'SKIP')
-sha256sums_aarch64=('b38c26550ec95d5d1c6a40e1b9e6b09105938e2731395cddac742597accdc2f2'
-                    'SKIP')
 validpgpkeys=('3FEF9748469ADBE15DA7CA80AC2D62742012EA22')
 
 verify() {
-  local archive_arch=x64
-  if [[ $CARCH == aarch64 ]]; then
-    archive_arch=arm64
-  fi
-
-  local archive="1password-${_tarver}.${archive_arch}.tar.gz"
-  local key="${startdir}/keys/pgp/${validpgpkeys[0]}.asc"
+  local archive="1password-${_tarver}.x64.tar.gz"
+  local key="keys/pgp/${validpgpkeys[0]}.asc"
   local verifydir
   verifydir="$(mktemp -d)"
   install -dm700 "${verifydir}/gnupg"
@@ -56,12 +46,7 @@ verify() {
 }
 
 package() {
-  local archive_arch=x64
-  if [[ $CARCH == aarch64 ]]; then
-    archive_arch=arm64
-  fi
-
-  local archive="1password-${_tarver}.${archive_arch}.tar.gz"
+  local archive="1password-${_tarver}.x64.tar.gz"
   install -dm755 "${pkgdir}/opt/1Password"
   bsdtar --no-same-permissions -xf "${srcdir}/${archive}" \
     --strip-components 1 -C "${pkgdir}/opt/1Password"

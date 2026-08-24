@@ -33,7 +33,12 @@ fi
 
 if (( EUID != 0 )); then
   if command -v sudo >/dev/null 2>&1; then
-    exec sudo \
+    if ! sudo -n true 2>/dev/null; then
+      printf 'Error: root privileges are required; passwordless sudo is unavailable in this non-interactive shell\n' >&2
+      printf 'Run this command as root or authenticate with sudo before retrying.\n' >&2
+      exit 1
+    fi
+    exec sudo -n \
       --preserve-env=SOURCE_DATE_EPOCH,MAKEFLAGS,MAKEPKG_CONF,PACKAGER,GPGKEY,PKGDEST,SRCDEST,LOGDEST,CCACHE_DIR \
       "$script_dir/build.sh" "$@"
   fi
@@ -66,6 +71,7 @@ build_one() {
   fi
 
   cd -- "$package_dir"
+  printf '==> Building %s in a clean chroot\n' "$package" >&2
   pkgctl build
 }
 

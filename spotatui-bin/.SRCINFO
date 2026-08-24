@@ -1,7 +1,7 @@
 pkgbase = spotatui-bin
 	pkgdesc = A Spotify client for the terminal written in Rust, powered by Ratatui
 	pkgver = 0.41.0
-	pkgrel = 2
+	pkgrel = 3
 	url = https://github.com/LargeModGames/spotatui
 	arch = x86_64
 	license = MIT
@@ -10,6 +10,8 @@ pkgbase = spotatui-bin
 	depends = gcc-libs
 	depends = openssl
 	depends = pipewire
+	optdepends = yt-dlp: YouTube playback support
+	optdepends = ffmpeg: improved YouTube playback support
 	provides = spotatui=0.41.0
 	conflicts = spotatui
 	options = !debug

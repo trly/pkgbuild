@@ -58,7 +58,10 @@ the package as complete.
    Prefer the strongest checksum published by upstream (`b2`, then SHA-512,
    SHA-384, SHA-256, SHA-224, SHA-1, MD5, and finally CRC32). Never use `SKIP`
    for a downloadable release archive without documenting an unavoidable
-   reason.
+   reason. `updpkgsums` rewrites existing checksum entries, including
+   intentional `SKIP` entries. After running it, inspect the diff and restore
+   documented `SKIP` values for mutable repository metadata or other sources
+   that cannot be reproducibly hashed.
 
 If the release uses a tag format or asset naming scheme that cannot be safely
 represented using `pkgver`, document the limitation rather than adding a
@@ -112,9 +115,10 @@ single-output packages; it defaults to `pkgname`.
   hyphen, and should match the package's public name where practical.
 - `pkgver` must be a valid pacman version: no spaces or hyphens; translate an
   upstream hyphen to an underscore. `pkgver` may contain underscores. `pkgrel`
-  is normally a positive integer. Reset it to `1` for a new upstream version
-  and increment it for packaging-only changes. Use `epoch` only to repair
-  version ordering.
+   is normally a positive integer. Reset it to `1` for a new upstream version
+   and increment it for every packaging-only change, including changes to
+   dependencies, architecture support, install paths, relations, source
+   handling, or license metadata. Use `epoch` only to repair version ordering.
 - Keep `pkgdesc` concise, useful, and preferably no longer than 80 characters;
   do not write it as a self-referential sentence. Set `arch=('any')` only for
   architecture-independent output; compiled or prebuilt binaries need explicit
@@ -148,14 +152,18 @@ single-output packages; it defaults to `pkgname`.
 - Use `noextract` only for sources that must remain untouched, and extract them
   explicitly in `prepare()` with the required tool in `makedepends`.
 - When upstream publishes detached signatures, include the signature in
-  `source`, set full uppercase `validpgpkeys` fingerprints, and import trusted
-  keys from package-local `keys/pgp/` as this repository's `build.sh` supports.
-  Use `verify()` only when makepkg's normal signature handling cannot validate
-  the source layout. Do not download keys from an untrusted build-time URL.
+  `source`, set full uppercase `validpgpkeys` fingerprints, and keep trusted
+  keys in package-local `keys/pgp/`. The host's temporary GPG keyring is not
+  available inside clean-chroot builds, so `validpgpkeys` alone is insufficient
+  for keys that are not in the Arch keyring. For those sources, name the
+  downloaded signature with a `.signature` suffix rather than `.sig`, and use
+  `verify()` to import the tracked key into a temporary `--homedir` and verify
+  the archive there. Do not download keys from an untrusted build-time URL.
 - Keep each integrity array aligned one-for-one with its corresponding source
   array, including architecture-specific arrays.
 - `.install` files are referenced with the `install` variable and are detected
   automatically by makepkg; do not redundantly add them to `source`.
+- Keep `.SRCINFO` and `pkgrel` updates in the same change as the PKGBUILD.
 
 ## Build Functions And Paths
 
@@ -195,29 +203,44 @@ updpkgsums                 # after source and signature entries are final
 makepkg --printsrcinfo > .SRCINFO
 cd ..
 ./lint.sh PACKAGE
-./build.sh PACKAGE
+makepkg --cleanbuild --clean --force
 ```
 
 `lint.sh` runs ShellCheck with SC2034, SC2154, and SC2164 excluded, verifies
-`.SRCINFO` against `makepkg --printsrcinfo`, and runs `namcap` against
-`PKGBUILD`; `build.sh` performs the repository's clean-chroot build through
-`pkgctl`. The build requires an Arch `base-devel` environment, `devtools`, and
-a non-root build user. If it cannot run locally, state that clearly and still
-run available metadata checks.
+`.SRCINFO` against `makepkg --printsrcinfo`, runs `namcap` against `PKGBUILD`,
+and runs `reuse lint`; use `./lint.sh all` to validate every package in one
+invocation. `build.sh` performs the repository's clean-chroot build through
+`pkgctl`; use it only for explicit clean-chroot validation. After a pull
+request is opened, the required `Check and build packages` job in
+`.github/workflows/test-packages.yml` invokes `./build.sh PACKAGE` for each
+changed package in a privileged Arch container. That CI job is the authoritative
+clean-chroot validation. Use
+`makepkg --cleanbuild --clean --force` for initial development and local change
+validation; it runs without root but requires the necessary dependencies to be
+installed in the host environment. Do not use `--nodeps` as normal validation.
+The clean-chroot build requires an Arch `base-devel` environment, `devtools`,
+and a non-root build user with passwordless or already-authenticated `sudo`
+when invoked as a non-root user. If local clean-chroot validation cannot run,
+state that clearly; a local `makepkg` build is useful local validation but is
+not equivalent to the required pull-request CI clean-chroot build.
 
 After a successful build, validate the archive as well:
 
 ```bash
 cd PACKAGE
+archive=$(makepkg --packagelist)
 namcap PKGBUILD
-namcap PACKAGE-*.pkg.tar.zst
-pacman -Qip PACKAGE-*.pkg.tar.zst
-pacman -Qlp PACKAGE-*.pkg.tar.zst
+namcap "$archive"
+pacman -Qip "$archive"
+pacman -Qlp "$archive"
 ```
 
 Test the installed application and, optionally, verify reproducibility with
 `makerepropkg PACKAGE-*.pkg.tar.zst` from `devtools`.
 
 Do not leave scaffold values, unsynchronized `.SRCINFO`, missing checksums,
-unverified available signatures, or unexplained dependencies in the completed
-package. Summarize any checks that could not run and why.
+unverified available signatures, unexplained dependencies, stale package
+archives, or unexplained `SKIP` entries in the completed package. Summarize
+any checks that could not run and why. For archive inspection, use the filename
+from `makepkg --packagelist` or remove stale archives first; do not let a
+wildcard validate an older build.

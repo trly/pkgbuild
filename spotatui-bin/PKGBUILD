@@ -1,12 +1,14 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=spotatui-bin
 pkgver=0.41.0 # renovate: datasource=github-tags depName=LargeModGames/spotatui
-pkgrel=2
+pkgrel=3
 pkgdesc="A Spotify client for the terminal written in Rust, powered by Ratatui"
 arch=('x86_64')
 url="https://github.com/LargeModGames/spotatui"
 license=('MIT')
 depends=('alsa-lib' 'glibc' 'gcc-libs' 'openssl' 'pipewire')
+optdepends=('yt-dlp: YouTube playback support'
+            'ffmpeg: improved YouTube playback support')
 provides=("spotatui=${pkgver}")
 conflicts=('spotatui')
 options=('!debug' '!strip')
