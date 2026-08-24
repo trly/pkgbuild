@@ -1,15 +1,13 @@
-pkgbase = pkgdepot-bin
+pkgbase = pkgdepot
 	pkgdesc = Arch Linux package repository server
 	pkgver = 0.3.0
 	pkgrel = 2
 	url = https://github.com/trly/pkgdepot
 	arch = x86_64
 	license = MIT
-	provides = pkgdepot=0.3.0
-	conflicts = pkgdepot
 	options = !debug
 	options = !strip
-	source = pkgdepot-bin-0.3.0-linux-amd64.tar.gz::https://github.com/trly/pkgdepot/releases/download/v0.3.0/pkgdepot_0.3.0_linux_amd64.tar.gz
+	source = pkgdepot-0.3.0-linux-amd64.tar.gz::https://github.com/trly/pkgdepot/releases/download/v0.3.0/pkgdepot_0.3.0_linux_amd64.tar.gz
 	sha256sums = 8bb75b38f9369323990d868d065b6d118c56db3dd13c4f1757b854dc91da33e5
 
-pkgname = pkgdepot-bin
+pkgname = pkgdepot

@@ -1,4 +1,4 @@
-pkgbase = opencode-desktop-bin
+pkgbase = opencode-desktop
 	pkgdesc = Open source AI coding agent desktop client
 	pkgver = 1.18.21
 	pkgrel = 2
@@ -39,14 +39,12 @@ pkgbase = opencode-desktop-bin
 	depends = util-linux-libs
 	depends = xdg-utils
 	optdepends = libappindicator-gtk3: tray icon support
-	provides = opencode-desktop=1.18.21
-	conflicts = opencode-desktop
-	noextract = opencode-desktop-bin-1.18.21-amd64.deb
+	noextract = opencode-desktop-1.18.21-amd64.deb
 	options = !debug
 	options = !strip
 	source = LICENSE-1.18.21::https://raw.githubusercontent.com/anomalyco/opencode/v1.18.21/LICENSE
 	sha256sums = 625f0f619133f89bbbb2abe37369613dfa1885eba1e50d02170deb62bb42cb6b
-	source_x86_64 = opencode-desktop-bin-1.18.21-amd64.deb::https://github.com/anomalyco/opencode/releases/download/v1.18.21/opencode-desktop-linux-amd64.deb
+	source_x86_64 = opencode-desktop-1.18.21-amd64.deb::https://github.com/anomalyco/opencode/releases/download/v1.18.21/opencode-desktop-linux-amd64.deb
 	sha256sums_x86_64 = 5d5149057674388c73f3b8a6d3e776cba6fa75b26536482dbf03ff6e53d4fc26
 
-pkgname = opencode-desktop-bin
+pkgname = opencode-desktop
