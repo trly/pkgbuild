@@ -66,7 +66,7 @@ From a package directory, regenerate metadata with:
 makepkg --printsrcinfo > .SRCINFO
 ```
 
-Run the metadata linter and a clean chroot build from the repository root:
+Run the PKGBUILD linters and a clean chroot build from the repository root:
 
 ```sh
 ./lint.sh package-name
@@ -94,13 +94,17 @@ Pull request CI:
 
 - Runs ShellCheck on tracked shell scripts and `actionlint` on workflows.
 - Discovers changed top-level directories containing a `PKGBUILD`.
-- Rebuilds all packages when shared build scripts or package workflows change.
+- Rebuilds all packages when shared build inputs change: `build.sh`, `lint.sh`,
+  the package CI workflow, or the package discovery action.
 - Runs `namcap`, verifies that `.SRCINFO` matches `makepkg --printsrcinfo`,
   builds in an Arch clean chroot, and validates the resulting archive.
 
 Changes outside package directories do not normally trigger package builds.
-Changes to `build.sh`, `lint.sh`, or the package CI and publish workflows
-trigger all package builds.
+Changes to `build.sh`, `lint.sh`, the CI workflow
+(`.github/workflows/test-packages.yml`), or the discovery action
+(`.github/actions/discover-packages/*`) trigger all package builds. Changes to
+other workflows, such as `publish.yml`, build only the packages changed by the
+pull request.
 
 ## Automated Releases
 
@@ -113,12 +117,15 @@ Packages are published by `.github/workflows/publish.yml` after a push to
 3. Ensure the package builds successfully with `pkgctl build` and passes
    `namcap`.
 
-The publish workflow builds every package in that matrix, uploads each
-resulting `*.pkg.tar.zst` as a short-lived artifact, and publishes new
-filenames to the `stable` repository with `pkgdepot`. It rejects duplicate
-local filenames and refuses to republish a changed package under an existing
-remote filename. A version or release change must therefore produce a new
-archive filename.
+The publish workflow plans against the parent of the pushed commit and builds
+only the packages that push touches, not every repository package. It uploads
+each resulting `*.pkg.tar.zst` as a short-lived artifact and publishes new
+filenames to the `stable` repository with `pkgdepot`. Before publishing, the
+workflow lists existing remote filenames and refuses any duplicate, so a
+changed package cannot be republished under an existing filename; a version or
+release change must therefore produce a new archive filename. Force pushes
+skip planning, building, and publishing entirely because their rewritten
+history has no meaningful diff; recover by pushing normally.
 
 Renovate pull requests that change `*/PKGBUILD` are handled by the metadata
 workflow. For same-repository Renovate branches, it recalculates checksums,

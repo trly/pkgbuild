@@ -33,7 +33,7 @@ jobs:
       contents: read
     steps:
       - name: Install tools
-        run: pacman -Syu --noconfirm --needed git github-cli pacman-contrib sudo
+        run: pacman -Syu --noconfirm --needed git github-cli namcap pacman-contrib python sudo
 
       - name: Check out Renovate branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
