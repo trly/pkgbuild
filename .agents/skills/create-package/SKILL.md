@@ -16,7 +16,17 @@ Obtain:
   length limit. (255 characters)
 - Either a GitHub repository or releases URL, or an AUR package name/URL.
 
-Use a `-bin` suffix for packages that redistribute upstream prebuilt binaries.
+Choose the package name based on the available package alternatives, not only on
+the source format:
+
+- Use a `-bin` suffix when an unsuffixed source-built package exists in this
+  repository or is being added as the parallel alternative.
+- Use the unsuffixed name when this repository has no source-built counterpart,
+  even if the package redistributes upstream prebuilt binaries. Do not create a
+  new `-bin` variant solely because the release asset is a binary archive.
+- Before choosing the name, inspect the repository's top-level package
+  directories for an unsuffixed source package and any related package
+  relationships.
 Do not overwrite an existing package directory. Before writing the final
 PKGBUILD, confirm the upstream license, supported architectures, release format,
 and runtime, build, and test requirements.
@@ -187,11 +197,13 @@ staged installs; never run `make install` against the live filesystem. Do not
 move build outputs from `${srcdir}` into `${pkgdir}`, because that breaks
 `makepkg --repackage`.
 
-For prebuilt binaries, normally use `options=('!debug' '!strip')`, declare
-matching `provides`/`conflicts` when replacing an unsuffixed package, and
-install upstream license and useful documentation files. Use an install script
-only when a pacman lifecycle action is genuinely required; do not end an
-`.install` script with `exit`.
+For prebuilt binaries, normally use `options=('!debug' '!strip')`. When the
+package uses a `-bin` name alongside an unsuffixed source package, declare
+matching versioned `provides` and `conflicts` (and `replaces` only for a real
+package transition). Do not add those relations merely because the package
+contains prebuilt files. Install upstream license and useful documentation
+files. Use an install script only when a pacman lifecycle action is genuinely
+required; do not end an `.install` script with `exit`.
 
 ## Finalize And Validate
 

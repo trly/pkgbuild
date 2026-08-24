@@ -1,5 +1,5 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
-pkgname=opencode-desktop-bin
+pkgname=opencode-desktop
 pkgver=1.18.21 # renovate: datasource=github-tags depName=anomalyco/opencode
 pkgrel=2
 pkgdesc="Open source AI coding agent desktop client"
@@ -12,8 +12,6 @@ depends=('alsa-lib' 'at-spi2-core' 'cairo' 'dbus' 'expat' 'glib2' 'glibc'
          'libxrandr' 'libxss' 'libxtst' 'mesa' 'nspr' 'nss' 'pango' 'ripgrep'
          'systemd-libs' 'util-linux-libs' 'xdg-utils')
 optdepends=('libappindicator-gtk3: tray icon support')
-provides=("opencode-desktop=${pkgver}")
-conflicts=('opencode-desktop')
 options=('!debug' '!strip')
 noextract=("${pkgname}-${pkgver}-amd64.deb")
 source=("LICENSE-${pkgver}::https://raw.githubusercontent.com/anomalyco/opencode/v${pkgver}/LICENSE")

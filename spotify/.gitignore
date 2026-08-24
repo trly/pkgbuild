@@ -1,0 +1,9 @@
+/pkg/
+/src/
+/*.pkg.tar.*
+/*.src.tar.*
+/spotify-*.deb
+/spotify-client_*.deb
+/spotify-*-Release
+/spotify-*-Release.gpg
+/spotify-*-Packages

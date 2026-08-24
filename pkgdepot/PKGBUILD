@@ -1,13 +1,11 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
-pkgname=pkgdepot-bin
+pkgname=pkgdepot
 pkgver=0.3.0 # renovate: datasource=github-tags depName=trly/pkgdepot
 pkgrel=2
 pkgdesc="Arch Linux package repository server"
 arch=('x86_64')
 url="https://github.com/trly/pkgdepot"
 license=('MIT')
-provides=("pkgdepot=${pkgver}")
-conflicts=('pkgdepot')
 options=('!debug' '!strip')
 source=("${pkgname}-${pkgver}-linux-amd64.tar.gz::${url}/releases/download/v${pkgver}/pkgdepot_${pkgver}_linux_amd64.tar.gz")
 sha256sums=('8bb75b38f9369323990d868d065b6d118c56db3dd13c4f1757b854dc91da33e5')

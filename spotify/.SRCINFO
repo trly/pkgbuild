@@ -1,4 +1,4 @@
-pkgbase = spotify-bin
+pkgbase = spotify
 	pkgdesc = Spotify desktop client
 	pkgver = 1.2.96.518.g366879e1
 	pkgrel = 2
@@ -19,17 +19,15 @@ pkgbase = spotify-bin
 	optdepends = ffmpeg4.4: Adds support for playback of local files
 	optdepends = zenity: Adds support for importing local files
 	optdepends = libnotify: Desktop notifications
-	provides = spotify=1.2.96.518.g366879e1
-	conflicts = spotify
 	options = !debug
 	options = !strip
 	source = https://repository.spotify.com/pool/non-free/s/spotify-client/spotify-client_1.2.96.518.g366879e1_amd64.deb
 	source = spotify.sh
 	source = spotify.protocol
 	source = LICENSE
-	source = spotify-bin-1.2.96.518.g366879e1-2-Release::https://repository.spotify.com/dists/testing/Release
-	source = spotify-bin-1.2.96.518.g366879e1-2-Release.gpg::https://repository.spotify.com/dists/testing/Release.gpg
-	source = spotify-bin-1.2.96.518.g366879e1-2-Packages::https://repository.spotify.com/dists/testing/non-free/binary-amd64/Packages
+	source = spotify-1.2.96.518.g366879e1-2-Release::https://repository.spotify.com/dists/testing/Release
+	source = spotify-1.2.96.518.g366879e1-2-Release.gpg::https://repository.spotify.com/dists/testing/Release.gpg
+	source = spotify-1.2.96.518.g366879e1-2-Packages::https://repository.spotify.com/dists/testing/non-free/binary-amd64/Packages
 	validpgpkeys = E1096BCBFF6D418796DE78515384CE82BA52C83A
 	sha256sums = 1a86581f53c2b0e2c406150665ea05e245b9e6b286390ea61d5d193ba617eb2f
 	sha256sums = 764cf7d24c35e3327cef4c0469351dabbf8b1edbaa10e1f35f64c91f135b31d9
@@ -39,4 +37,4 @@ pkgbase = spotify-bin
 	sha256sums = SKIP
 	sha256sums = SKIP
 
-pkgname = spotify-bin
+pkgname = spotify
