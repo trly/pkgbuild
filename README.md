@@ -51,71 +51,16 @@ Preserve the package-local `REUSE.toml` annotations when adding or changing
 package metadata files. Keep `.SRCINFO` tracked and synchronized with the
 `PKGBUILD`.
 
-## PKGBUILD Conventions
+## Creating Packages
 
-Structure `PKGBUILD` files in the following order:
-
-1. Maintainer comment.
-2. Package identity and version: `pkgname`, optional internal version
-   variables, `pkgver`, and `pkgrel`.
-3. Description and package metadata: `pkgdesc`, `arch`, `url`, and `license`.
-4. Package relationships and dependencies: `depends`, `makedepends`,
-   `checkdepends`, `provides`, and `conflicts` as needed.
-5. Build options and auxiliary files: `options`, `install`, and `backup` as
-   needed.
-6. Sources, architecture-specific sources, checksums, and signature keys.
-7. Optional `prepare()`, `build()`, `check()`, `verify()`, and `package()`
-   functions.
-
-Use standard Arch packaging variables and quote paths that may contain shell
-metacharacters. Keep version-derived URLs, archive names, and checksums tied
-to `pkgver`. Use architecture-specific variables such as `source_x86_64` and
-`sha256sums_x86_64` when upstream distributes different artifacts per
-architecture.
-
-Prefer upstream-provided release archives for binary packages. Set
-`options=('!debug' '!strip')` when stripping or debug package generation is
-not appropriate for a prebuilt binary. For packages that replace another
-package, declare the relationship with `provides` and `conflicts` rather than
-silently installing overlapping files.
-
-Install files into `${pkgdir}` using `install` with explicit modes and the
-standard filesystem locations:
-
-- Executables in `/usr/bin`.
-- Licenses in `/usr/share/licenses/${pkgname}`.
-- Documentation in `/usr/share/doc/${pkgname}`.
-- Desktop files and icons in their standard `/usr/share` locations.
-- Configuration files in `/etc`, with `backup` when local changes should be
-  preserved across upgrades.
-
-Verify upstream signatures when they are available. Store trusted public keys
-under `keys/pgp/`, declare their fingerprints in `validpgpkeys`, and implement
-`verify()` when the archive format or upstream signature layout requires
-custom verification. Checksums must cover every source that is not explicitly
-skipped.
-
-For GitHub-tagged or released upstream projects, annotate the `pkgver`
-assignment so Renovate can update it:
-
-```bash
-pkgver=1.2.3 # renovate: datasource=github-tags depName=OWNER/REPOSITORY
-```
-
-Use the upstream `OWNER/REPOSITORY` value. The source URL and archive naming
-must derive from `pkgver`; Renovate updates the version, while automation
-updates checksums and `.SRCINFO`.
+Use the `create-package` skill at
+`.agents/skills/create-package/SKILL.md` when creating a package from a GitHub
+release or an existing AUR PKGBUILD. It contains the repository's PKGBUILD,
+attribution, Renovate, licensing, and validation requirements.
 
 ## Local Development
 
-Create a package skeleton with:
-
-```sh
-./create.sh package-name
-```
-
-Replace the generated placeholders and add required package files. From the
-package directory, regenerate metadata with:
+From a package directory, regenerate metadata with:
 
 ```sh
 makepkg --printsrcinfo > .SRCINFO
@@ -165,9 +110,7 @@ Packages are published by `.github/workflows/publish.yml` after a push to
 1. Add a new top-level directory containing a valid `PKGBUILD`.
 2. Commit its synchronized `.SRCINFO`, package `.gitignore`, and required
    metadata or verification files.
-3. Add the directory name to the `jobs.build.strategy.matrix.package` list in
-   `.github/workflows/publish.yml`.
-4. Ensure the package builds successfully with `pkgctl build` and passes
+3. Ensure the package builds successfully with `pkgctl build` and passes
    `namcap`.
 
 The publish workflow builds every package in that matrix, uploads each

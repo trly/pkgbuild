@@ -19,8 +19,8 @@ if [[ ! $package =~ ^[a-z0-9][a-z0-9@._+-]*$ ]]; then
   exit 2
 fi
 
-script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-package_dir=$script_dir/$package
+repo_root=$(git rev-parse --show-toplevel)
+package_dir=$repo_root/$package
 if [[ -e $package_dir ]]; then
   printf 'Error: package directory already exists: %s\n' "$package" >&2
   exit 1
@@ -28,7 +28,7 @@ fi
 
 mkdir -- "$package_dir"
 cat > "$package_dir/PKGBUILD" <<EOF
-# Maintainer: TODO
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=$package
 pkgver=0.1.0
 pkgrel=1
@@ -44,4 +44,21 @@ package() {
   # TODO: install files into \${pkgdir}.
   :
 }
+EOF
+
+cat > "$package_dir/.gitignore" <<'EOF'
+/pkg/
+/src/
+/*.pkg.tar.*
+/*.src.tar.*
+EOF
+
+cat > "$package_dir/REUSE.toml" <<'EOF'
+version = 1
+
+[[annotations]]
+path = [".gitignore", ".SRCINFO", "PKGBUILD"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Arch Linux Contributors"
+SPDX-License-Identifier = "0BSD"
 EOF

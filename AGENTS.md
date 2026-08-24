@@ -1,6 +1,7 @@
 # Repository Instructions
 
 - This repository contains independent Arch Linux packages. Keep package changes inside the affected top-level package directory; shared build and workflow changes are handled separately.
+- When designing a new package, use the `create-package` skill at `.agents/skills/create-package/SKILL.md`.
 - Each package is defined by `PKGBUILD`; keep its tracked `.SRCINFO` synchronized with `makepkg --printsrcinfo > .SRCINFO` from that package directory.
 - After testing package functionality, check both metadata and the built archive with `namcap PKGBUILD` and `namcap pkgname.pkg.tar.zst`; namcap checks common `PKGBUILD` and hierarchy errors, shared-library dependencies in ELF files, and missing or redundant dependencies.
 - Preserve the package-local `REUSE.toml` SPDX annotations when adding or changing package metadata files.

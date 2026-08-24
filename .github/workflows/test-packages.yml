@@ -53,7 +53,6 @@ jobs:
           head-sha: ${{ github.event.pull_request.head.sha }}
           # Shared inputs that change how every package is checked or built, so
           # a change to one has to be validated against the full matrix.
-          # create.sh only scaffolds new packages and is intentionally omitted.
           full-rebuild-paths: |
             build.sh
             lint.sh
