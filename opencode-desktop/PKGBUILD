@@ -17,7 +17,7 @@ noextract=("${pkgname}-${pkgver}-amd64.deb")
 source=("LICENSE-${pkgver}::https://raw.githubusercontent.com/anomalyco/opencode/v${pkgver}/LICENSE")
 source_x86_64=("${pkgname}-${pkgver}-amd64.deb::https://github.com/anomalyco/opencode/releases/download/v${pkgver}/opencode-desktop-linux-amd64.deb")
 sha256sums=('625f0f619133f89bbbb2abe37369613dfa1885eba1e50d02170deb62bb42cb6b')
-sha256sums_x86_64=('d6446439e2d3361cc4f9eb6a7c485faef7ac31fbafb2d8721441e794a01450a8')
+sha256sums_x86_64=('319198179a7f356b962b52a6e1829bdad28683ae549495eb5d84a6a6e2d8212b')
 
 prepare() {
   bsdtar -xf "${srcdir}/${pkgname}-${pkgver}-amd64.deb" data.tar.xz
