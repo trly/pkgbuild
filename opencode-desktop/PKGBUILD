@@ -1,6 +1,6 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=opencode-desktop
-pkgver=1.18.23 # renovate: datasource=github-tags depName=anomalyco/opencode
+pkgver=1.18.24 # renovate: datasource=github-tags depName=anomalyco/opencode
 pkgrel=2
 pkgdesc="Open source AI coding agent desktop client"
 arch=('x86_64')
