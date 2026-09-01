@@ -28,7 +28,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     container:
-      image: archlinux:base-devel@sha256:ee205c220399524a683cf495d411691b921baed8ab47cdc6d732efa782fae484
+      image: archlinux:base-devel@sha256:84cd9ef000b3cff245ec028e87965b84724f4bf1cc63fc2741ba927b88515ed6
     permissions:
       contents: read
     steps:
