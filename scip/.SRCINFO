@@ -1,13 +1,13 @@
 pkgbase = scip
 	pkgdesc = Language-agnostic protocol for indexing source code
-	pkgver = 0.9.0
+	pkgver = 0.10.0
 	pkgrel = 3
 	url = https://github.com/scip-code/scip
 	arch = x86_64
 	license = Apache-2.0
 	options = !debug
 	options = !strip
-	source_x86_64 = scip-0.9.0-linux-amd64.tar.gz::https://github.com/scip-code/scip/releases/download/v0.9.0/scip-linux-amd64.tar.gz
-	sha256sums_x86_64 = fc2e7273e110be9f35924da1066000183791e8bfdb0391355de6eaaa070fec75
+	source_x86_64 = scip-0.10.0-linux-amd64.tar.gz::https://github.com/scip-code/scip/releases/download/v0.10.0/scip-linux-amd64.tar.gz
+	sha256sums_x86_64 = eeb28ebbff443c01609fb1691809958f3f0c7a8651af689a5bc8560061cd8ab0
 
 pkgname = scip
