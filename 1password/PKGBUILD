@@ -2,7 +2,7 @@
 pkgname=1password
 _tarver=8.12.30
 pkgver=${_tarver//-/_}
-pkgrel=5
+pkgrel=6
 pkgdesc="Password manager and secure wallet"
 arch=('x86_64')
 url="https://1password.com"

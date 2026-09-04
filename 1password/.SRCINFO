@@ -1,7 +1,7 @@
 pkgbase = 1password
 	pkgdesc = Password manager and secure wallet
 	pkgver = 8.12.30
-	pkgrel = 5
+	pkgrel = 6
 	url = https://1password.com
 	install = 1password.install
 	arch = x86_64
