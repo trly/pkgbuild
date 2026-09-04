@@ -5,3 +5,9 @@ path = [".gitignore", ".SRCINFO", "1password.install", "1password.license", "key
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Arch Linux Contributors"
 SPDX-License-Identifier = "0BSD"
+
+[[annotations]]
+path = ["1password-*.tar.gz.signature"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "1Password"
+SPDX-License-Identifier = "CC0-1.0"
