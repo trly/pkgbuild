@@ -1,0 +1,20 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+pkgname=src-cli
+pkgver=7.6.0 # renovate: datasource=github-tags depName=sourcegraph/src-cli
+pkgrel=1
+pkgdesc="Sourcegraph command-line interface"
+arch=('x86_64')
+url="https://github.com/sourcegraph/src-cli"
+license=('Apache-2.0')
+
+options=('!debug' '!strip')
+source=("LICENSE-${pkgver}::${url}/raw/${pkgver}/LICENSE")
+source_x86_64=("${pkgname}-${pkgver}-linux-amd64::${url}/releases/download/${pkgver}/src_linux_amd64")
+noextract=("${pkgname}-${pkgver}-linux-amd64")
+sha256sums=('c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4')
+sha256sums_x86_64=('3816329820ea112547035ed1cad2568807da8c0f0293898b2e0962ef11589ade')
+
+package() {
+  install -Dm755 "${srcdir}/${pkgname}-${pkgver}-linux-amd64" "${pkgdir}/usr/bin/src"
+  install -Dm644 "${srcdir}/LICENSE-${pkgver}" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

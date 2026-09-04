@@ -1,0 +1,16 @@
+pkgbase = src-cli
+	pkgdesc = Sourcegraph command-line interface
+	pkgver = 7.6.0
+	pkgrel = 1
+	url = https://github.com/sourcegraph/src-cli
+	arch = x86_64
+	license = Apache-2.0
+	noextract = src-cli-7.6.0-linux-amd64
+	options = !debug
+	options = !strip
+	source = LICENSE-7.6.0::https://github.com/sourcegraph/src-cli/raw/7.6.0/LICENSE
+	sha256sums = c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4
+	source_x86_64 = src-cli-7.6.0-linux-amd64::https://github.com/sourcegraph/src-cli/releases/download/7.6.0/src_linux_amd64
+	sha256sums_x86_64 = 3816329820ea112547035ed1cad2568807da8c0f0293898b2e0962ef11589ade
+
+pkgname = src-cli
