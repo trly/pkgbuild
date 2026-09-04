@@ -5,3 +5,9 @@ path = [".gitignore", ".mise.toml", "AGENTS.md", "README.md", "renovate.json", "
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Travis Lyons"
 SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["pkgdepot-bin/.gitignore", "spotatui-bin/.gitignore"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Arch Linux Contributors"
+SPDX-License-Identifier = "0BSD"
