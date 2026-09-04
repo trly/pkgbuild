@@ -1,7 +1,7 @@
 pkgbase = src-cli
 	pkgdesc = Sourcegraph command-line interface
 	pkgver = 7.6.0
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/sourcegraph/src-cli
 	arch = x86_64
 	license = Apache-2.0
