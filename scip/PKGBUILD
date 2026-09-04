@@ -8,7 +8,7 @@ url="https://github.com/scip-code/scip"
 license=('Apache-2.0')
 options=('!debug' '!strip')
 source_x86_64=("${pkgname}-${pkgver}-linux-amd64.tar.gz::${url}/releases/download/v${pkgver}/scip-linux-amd64.tar.gz")
-sha256sums_x86_64=('fc2e7273e110be9f35924da1066000183791e8bfdb0391355de6eaaa070fec75')
+sha256sums_x86_64=('eeb28ebbff443c01609fb1691809958f3f0c7a8651af689a5bc8560061cd8ab0')
 
 package() {
   install -Dm755 scip -t "${pkgdir}/usr/bin/"
