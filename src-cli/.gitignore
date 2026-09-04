@@ -1,0 +1,6 @@
+/pkg/
+/src/
+/LICENSE-*
+/src-cli-*-linux-amd64
+/*.pkg.tar.*
+/*.src.tar.*
