@@ -1,7 +1,7 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=src-cli
 pkgver=7.6.0 # renovate: datasource=github-tags depName=sourcegraph/src-cli
-pkgrel=1
+pkgrel=2
 pkgdesc="Sourcegraph command-line interface"
 arch=('x86_64')
 url="https://github.com/sourcegraph/src-cli"
