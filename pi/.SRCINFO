@@ -1,7 +1,7 @@
 pkgbase = pi
 	pkgdesc = Minimal terminal coding harness
 	pkgver = 0.85.0
-	pkgrel = 3
+	pkgrel = 1
 	url = https://github.com/earendil-works/pi
 	arch = x86_64
 	license = MIT
