@@ -1,6 +1,6 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=scip
-pkgver=0.9.0 # renovate: datasource=github-tags depName=scip-code/scip
+pkgver=0.10.0 # renovate: datasource=github-tags depName=scip-code/scip
 pkgrel=3
 pkgdesc="Language-agnostic protocol for indexing source code"
 arch=('x86_64')
