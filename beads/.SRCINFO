@@ -1,0 +1,16 @@
+pkgbase = beads
+	pkgdesc = Graph-based memory and issue tracker for coding agents
+	pkgver = 1.2.2
+	pkgrel = 1
+	url = https://github.com/gastownhall/beads
+	arch = x86_64
+	license = MIT
+	depends = glibc
+	provides = beads-bin=1.2.2
+	conflicts = beads-bin
+	options = !debug
+	options = !strip
+	source_x86_64 = beads-1.2.2-linux-amd64.tar.gz::https://github.com/gastownhall/beads/releases/download/v1.2.2/beads_1.2.2_linux_amd64.tar.gz
+	sha256sums_x86_64 = 8140098a51d3b81d5548d1c5e6db1a2d9930e5d141efe2a4bff7d079c4d321e8
+
+pkgname = beads
