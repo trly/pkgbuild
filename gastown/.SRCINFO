@@ -1,0 +1,19 @@
+pkgbase = gastown
+	pkgdesc = Multi-agent workspace manager with persistent work tracking
+	pkgver = 1.2.1
+	pkgrel = 1
+	url = https://github.com/gastownhall/gastown
+	arch = x86_64
+	license = MIT
+	depends = glibc
+	depends = git
+	optdepends = beads: git-backed issue tracking integration
+	optdepends = dolt: version-controlled storage for towns and rigs
+	optdepends = tmux: multi-agent sessions and full experience
+	optdepends = sqlite: convoy database queries
+	options = !debug
+	options = !strip
+	source_x86_64 = gastown-1.2.1-linux-amd64.tar.gz::https://github.com/gastownhall/gastown/releases/download/v1.2.1/gastown_1.2.1_linux_amd64.tar.gz
+	sha256sums_x86_64 = cc81f0a55c1f30986759ec8a924e232316c1532900d61af241965ebc0127eb05
+
+pkgname = gastown

@@ -1,0 +1,40 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+# Contributor: David Birks <david@birks.dev>
+# Adapted from https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=gastown
+pkgname=gastown
+pkgver=1.2.1 # renovate: datasource=github-tags depName=gastownhall/gastown
+pkgrel=1
+pkgdesc="Multi-agent workspace manager with persistent work tracking"
+arch=('x86_64')
+url="https://github.com/gastownhall/gastown"
+license=('MIT')
+
+depends=('glibc' 'git')
+makedepends=()
+checkdepends=()
+optdepends=(
+  'beads: git-backed issue tracking integration'
+  'dolt: version-controlled storage for towns and rigs'
+  'tmux: multi-agent sessions and full experience'
+  'sqlite: convoy database queries'
+)
+
+options=('!debug' '!strip')
+
+source_x86_64=("${pkgname}-${pkgver}-linux-amd64.tar.gz::${url}/releases/download/v${pkgver}/gastown_${pkgver}_linux_amd64.tar.gz")
+sha256sums_x86_64=('cc81f0a55c1f30986759ec8a924e232316c1532900d61af241965ebc0127eb05')
+
+package() {
+  install -Dm755 "${srcdir}/gt" "${pkgdir}/usr/bin/gt"
+
+  install -Dm644 "${srcdir}/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 "${srcdir}/README.md" "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+
+  install -dm755 "${pkgdir}/usr/share/bash-completion/completions"
+  install -dm755 "${pkgdir}/usr/share/zsh/site-functions"
+  install -dm755 "${pkgdir}/usr/share/fish/vendor_completions.d"
+
+  "${srcdir}/gt" completion bash > "${pkgdir}/usr/share/bash-completion/completions/gt"
+  "${srcdir}/gt" completion zsh > "${pkgdir}/usr/share/zsh/site-functions/_gt"
+  "${srcdir}/gt" completion fish > "${pkgdir}/usr/share/fish/vendor_completions.d/gt.fish"
+}
