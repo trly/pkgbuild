@@ -1,6 +1,6 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=pi
-pkgver=0.85.0 # renovate: datasource=github-tags depName=earendil-works/pi
+pkgver=0.85.1 # renovate: datasource=github-tags depName=earendil-works/pi
 pkgrel=1
 pkgdesc="Minimal terminal coding harness"
 arch=('x86_64')
