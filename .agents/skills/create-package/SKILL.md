@@ -43,6 +43,12 @@ It creates `PKGBUILD`, `.SRCINFO`, `.gitignore`, and package-local `REUSE.toml`.
 The repository-root `build.sh` and `lint.sh` are shared CI tooling and must not
 be copied into this skill's `scripts/` directory.
 
+The scaffolded `.gitignore` ignores `pkg/`, `src/`, built package archives, and
+downloaded source archives with common extensions (`*.tar.*`, `*.tgz`,
+`*.zip`) so that `updpkgsums` and `makepkg` downloads are never committed. If a
+source uses a `name::` alias or an archive extension outside those patterns,
+add a matching `.gitignore` entry before downloading it.
+
 The generated PKGBUILD is deliberately an incomplete scaffold. Replace every
 scaffold value and make `package()` install the intended files before treating
 the package as complete.
@@ -217,6 +223,16 @@ cd ..
 ./lint.sh PACKAGE
 makepkg --cleanbuild --clean --force
 ```
+
+`lint.sh` finishes with a repository-root `reuse lint`. That scanner only
+honors ignore rules from a package-local `.gitignore` once the file is tracked
+in git, and it scans tracked files even when they match ignore patterns, so
+during development — before the package is committed and its `.gitignore` is
+git-tracked — downloaded source archives and `pkg/`/`src/` outputs left in the
+package directory fail the REUSE check. Remove them from the package directory
+before running `./lint.sh` on a newly created or not yet committed package
+(`makepkg` re-downloads sources as needed), and never commit the downloaded
+archives themselves.
 
 `lint.sh` runs ShellCheck with SC2034, SC2154, and SC2164 excluded, verifies
 `.SRCINFO` against `makepkg --printsrcinfo`, runs `namcap` against `PKGBUILD`,

@@ -76,6 +76,9 @@ cat > "$package_dir/.gitignore" <<'EOF'
 /src/
 /*.pkg.tar.*
 /*.src.tar.*
+/*.tar.*
+/*.tgz
+/*.zip
 EOF
 
 cat > "$package_dir/REUSE.toml" <<'EOF'
