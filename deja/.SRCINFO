@@ -1,6 +1,6 @@
 pkgbase = deja
 	pkgdesc = Predictive inline shell autosuggestions for zsh
-	pkgver = 0.4.1
+	pkgver = 0.4.2
 	pkgrel = 3
 	url = https://github.com/Giammarco-Ferranti/deja
 	arch = x86_64
@@ -9,7 +9,7 @@ pkgbase = deja
 	depends = zsh
 	options = !debug
 	options = !strip
-	source_x86_64 = https://github.com/Giammarco-Ferranti/deja/releases/download/v0.4.1/deja_0.4.1_linux_amd64.tar.gz
-	sha256sums_x86_64 = 856ed143d73e1c1350ffd3f410300d40877b08bc3c8121006424f0ee61b4d68a
+	source_x86_64 = https://github.com/Giammarco-Ferranti/deja/releases/download/v0.4.2/deja_0.4.2_linux_amd64.tar.gz
+	sha256sums_x86_64 = 32db767e728d447941a70cf7dc95376a1e0a96168ad79674593715ac165ed310
 
 pkgname = deja
