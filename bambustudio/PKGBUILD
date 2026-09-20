@@ -1,0 +1,78 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+# Contributor: goll <adrian.goll+aur[at]gmail>
+# Contributor: George Woodall <georgewoodall82@gmail.com>
+# Adapted from https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=bambustudio-bin
+pkgname=bambustudio
+# Upstream asset names include a build timestamp; update it with pkgver.
+# Version-only Renovate updates cannot safely update these sources.
+_buildstamp=20260820225108
+pkgver=02.08.02.61
+pkgrel=1
+pkgdesc="3D printing slicer and printer control software from Bambu Lab"
+arch=('x86_64')
+url="https://github.com/bambulab/BambuStudio"
+license=('AGPL-3.0-only' 'LGPL-2.1-or-later')
+depends=('bash' 'ca-certificates' 'cairo' 'dbus' 'fontconfig' 'gdk-pixbuf2' 'glib2' 'glibc'
+         'gst-plugins-base-libs' 'gstreamer' 'gtk3' 'hicolor-icon-theme'
+         'libdrm' 'libgcc' 'libglvnd' 'libstdc++' 'libx11' 'libxkbcommon'
+         'pango' 'wayland' 'webkit2gtk-4.1' 'xdg-utils')
+makedepends=('patchelf')
+checkdepends=('desktop-file-utils')
+optdepends=('gst-plugins-bad: H.264 parsing and decoding for printer camera video')
+conflicts=('bambustudio-bin' 'bambustudio-git')
+options=('!debug' '!strip')
+source=("LICENSE-${pkgver}::https://raw.githubusercontent.com/bambulab/BambuStudio/v${pkgver}/LICENSE"
+        'bambu-studio')
+noextract=("${pkgname}-${pkgver}-${CARCH}.AppImage")
+source_x86_64=("${pkgname}-${pkgver}-${CARCH}.AppImage::${url}/releases/download/v${pkgver}/BambuStudio_ubuntu24.04-v${pkgver}-${_buildstamp}.AppImage")
+sha256sums=('57c8ff33c9c0cfc3ef00e650a1cc910d7ee479a8bc509f6c9209a7c2a11399d6'
+            '368d852474a0abbe22480e450c2a238cc82ac2cca7547ff344e4fdf0d393a580')
+sha256sums_x86_64=('d501b103fac5424513ec0e8d6bc145fb30719de2c7d94d7320d723740c81a7fd')
+
+prepare() {
+  chmod +x "${pkgname}-${pkgver}-${CARCH}.AppImage"
+  "./${pkgname}-${pkgver}-${CARCH}.AppImage" --appimage-extract > /dev/null
+
+  # Upstream development helpers are not used by the application.
+  rm squashfs-root/resources/profiles/check_duplicated_setting_id.py \
+     squashfs-root/resources/profiles/check_unused_setting_id.py
+
+  # Replace upstream's build-directory/empty RUNPATH with private library lookup.
+  # Patch the libraries too, so their indirect dependencies resolve without
+  # exporting LD_LIBRARY_PATH to WebKit subprocesses or external applications.
+  local binary
+  for binary in squashfs-root/bin/*; do
+    patchelf --set-rpath "\$ORIGIN" "$binary"
+  done
+
+  sed -i -e 's/^Name=.*/Name=Bambu Studio/' \
+         -e 's/^Exec=.*/Exec=bambu-studio %U/' \
+         -e '/^Keywords=/s/;*$/;/' \
+         -e '/^X-AppImage-Version=/d' squashfs-root/BambuStudio.desktop
+}
+
+check() {
+  desktop-file-validate squashfs-root/BambuStudio.desktop
+  LC_ALL=C squashfs-root/bin/bambu-studio --help > help.txt
+  grep -Fq "BambuStudio-${pkgver}:" help.txt
+}
+
+package() {
+  cd squashfs-root
+
+  install -Dm755 bin/* -t "${pkgdir}/usr/lib/${pkgname}/bin"
+  local resource size
+  while IFS= read -r -d '' resource; do
+    install -Dm644 "$resource" "${pkgdir}/usr/share/${pkgname}/${resource#resources/}"
+  done < <(find resources -type f -print0)
+  # The binary locates resources relative to its bin/ directory.
+  ln -s "../../share/${pkgname}" "${pkgdir}/usr/lib/${pkgname}/resources"
+
+  install -Dm755 "${srcdir}/bambu-studio" "${pkgdir}/usr/bin/bambu-studio"
+  install -Dm644 BambuStudio.desktop -t "${pkgdir}/usr/share/applications"
+  for size in 32 128 192; do
+    install -Dm644 "usr/share/icons/hicolor/${size}x${size}/apps/BambuStudio.png" \
+      "${pkgdir}/usr/share/icons/hicolor/${size}x${size}/apps/BambuStudio.png"
+  done
+  install -Dm644 "${srcdir}/LICENSE-${pkgver}" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

@@ -1,0 +1,7 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2026 Travis Lyons
+# SPDX-License-Identifier: 0BSD
+
+# Preserve upstream AppRun's locale workaround for startup crashes.
+export LC_ALL=C
+exec /usr/lib/bambustudio/bin/bambu-studio "$@"
