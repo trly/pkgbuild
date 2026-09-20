@@ -17,9 +17,18 @@
 - To enable Renovate for a package whose upstream publishes GitHub tags or releases, add a Renovate annotation to its `pkgver` assignment in `PKGBUILD`:
   `pkgver=1.2.3 # renovate: datasource=github-tags depName=OWNER/REPOSITORY`
 - Use the upstream repository's `OWNER/REPOSITORY` value for `depName`; the repository's `renovate.json` removes an optional leading `v` from Git tags.
+- The `github-tags` datasource matches tags, not releases. When upstream tags versions without publishing releases with assets, the update pull request cannot build; add an `allowedVersions` rule to `renovate.json` (for example `"allowedVersions": "<2"`) and let Renovate close that update until real releases exist.
 - Keep package source URLs, archive names, and any version-derived variables based on `pkgver` so Renovate's version replacement updates the downloadable source as well.
 - Renovate updates the version only. On same-repository Renovate pull requests targeting `main` that change `*/PKGBUILD`, the `Update package metadata` workflow recalculates checksums with `updpkgsums`, regenerates `.SRCINFO`, and commits those files back to the Renovate branch. It does not update forks or unrelated pull requests.
+- A Renovate pull request that fails `Check package metadata` on the `.SRCINFO` diff usually means the `Update package metadata` workflow has not pushed its metadata commit yet; check that workflow's latest run for the pull request first. After fixing the workflow, re-run its failed runs instead of hand-editing `.SRCINFO` on the branch.
+- The `Update package metadata` workflow pushes its commit with the `METADATA_PUSH_TOKEN` repository secret; a push failure with a git credentials error means the token expired. Rotate the secret and re-run the failed workflow runs.
 - New packages using this pattern are picked up automatically. Packages whose upstream version is stored in another variable, or whose releases are not available through a supported Renovate datasource, require a corresponding custom-manager or datasource change before adding an annotation.
+
+## Package publishing
+
+- Pushes to `main` trigger the `Publish main` workflow, which builds and publishes only the packages the push touches and refuses to overwrite an already-published filename. Only a new `pkgver`, release, or `pkgrel` produces a publishable filename.
+- Publish runs queue behind a running publish instead of cancelling it, so merging to `main` while a publish is in flight never aborts publishing; the queued run publishes its own diff afterward.
+- A package update that merged to `main` without being published (for example, under the previous cancel-in-progress behavior) is recovered with a `pkgrel` bump merged to `main`. Re-running the cancelled run cannot recover it: the workflow's `Confirm main is current` checks reject superseded commits.
 
 ## Additional References
 - https://wiki.archlinux.org/title/Creating_packages
