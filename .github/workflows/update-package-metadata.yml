@@ -75,7 +75,7 @@ jobs:
 
           for package in "${packages[@]}"; do
             (
-              sudo --user=builder --set-home bash -c '
+              sudo --user=builder --set-home bash -euo pipefail -c '
                 cd "$1"
                 updpkgsums
                 makepkg --printsrcinfo > .SRCINFO
