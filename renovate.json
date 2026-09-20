@@ -9,6 +9,13 @@
   "automerge": true,
   "packageRules": [
     {
+      "description": "Upstream tags v2 but publishes no v2 releases or assets yet",
+      "matchDepNames": [
+        "anomalyco/opencode"
+      ],
+      "allowedVersions": "<2"
+    },
+    {
       "description": "Pin GitHub Actions to immutable commit SHAs",
       "matchManagers": [
         "github-actions"
