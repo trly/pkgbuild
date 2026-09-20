@@ -1,6 +1,6 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=spotatui
-pkgver=0.41.0 # renovate: datasource=github-tags depName=LargeModGames/spotatui
+pkgver=0.42.0 # renovate: datasource=github-tags depName=LargeModGames/spotatui
 pkgrel=3
 pkgdesc="A Spotify client for the terminal written in Rust, powered by Ratatui"
 arch=('x86_64')
@@ -13,9 +13,9 @@ options=('!debug' '!strip')
 source=("${pkgname}-${pkgver}-${CARCH}.tar.gz::${url}/releases/download/v${pkgver}/spotatui-linux-${CARCH}.tar.gz"
         "LICENSE-${pkgver}::https://raw.githubusercontent.com/LargeModGames/spotatui/v${pkgver}/LICENSE"
         "README-${pkgver}.md::https://raw.githubusercontent.com/LargeModGames/spotatui/v${pkgver}/README.md")
-sha256sums=('66c0846529b62cfe2627062f044e21677697d807cfc14b07036348e849ca43e7'
+sha256sums=('12323f7ebdcdcd0b6f562464c2fa4242573db0da76c20396e1053d1cb63c17be'
             'b47ad91f512f5ae715df2888abf19ff0172c75de71b6423f836174bae8f8161e'
-            '2c2b10b7cbd6d341bd795cea82161883cef23f15982c0e75f13c98ff9096967b')
+            '2aad8976bc324a7cc6ff542e2ac5e1ca402d21df0a1f2f9ae0b3fae2545433cc')
 
 package() {
   install -Dm755 spotatui "${pkgdir}/usr/bin/spotatui"
