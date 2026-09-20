@@ -13,7 +13,12 @@ permissions:
 
 concurrency:
   group: publish-main
-  cancel-in-progress: true
+  # Queue consecutive pushes behind the running publish instead of cancelling
+  # it: cancelling would abort in-flight publishing, so packages from merges
+  # that happened during a run would never reach the repository until another
+  # merge triggered a fresh run. At most one queued run is kept per group, and
+  # its plan always covers every commit up to the current head of main.
+  cancel-in-progress: false
 
 jobs:
   plan:
