@@ -12,7 +12,7 @@ source=("LICENSE-${pkgver}::${url}/raw/${pkgver}/LICENSE")
 source_x86_64=("${pkgname}-${pkgver}-linux-amd64::${url}/releases/download/${pkgver}/src_linux_amd64")
 noextract=("${pkgname}-${pkgver}-linux-amd64")
 sha256sums=('c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4')
-sha256sums_x86_64=('3816329820ea112547035ed1cad2568807da8c0f0293898b2e0962ef11589ade')
+sha256sums_x86_64=('aefc2f213bb3683725128113da4ca4f8bf339160bd8b3a2f912ad0024df570af')
 
 package() {
   install -Dm755 "${srcdir}/${pkgname}-${pkgver}-linux-amd64" "${pkgdir}/usr/bin/src"
