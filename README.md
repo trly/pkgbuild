@@ -127,6 +127,13 @@ release change must therefore produce a new archive filename. Force pushes
 skip planning, building, and publishing entirely because their rewritten
 history has no meaningful diff; recover by pushing normally.
 
+Publish runs for consecutive pushes to `main` queue behind a running publish
+rather than cancelling it, so a merge during an in-flight publish never
+prevents its packages from being published. If a package update merged to
+`main` but its publish run was cancelled before uploading, recover with a
+`pkgrel` bump: the depot never rewrites an existing filename, and re-running
+the superseded run is rejected by the workflow's "main is current" guards.
+
 Renovate pull requests that change `*/PKGBUILD` are handled by the metadata
 workflow. For same-repository Renovate branches, it recalculates checksums,
 regenerates `.SRCINFO`, and commits those updates back to the branch. The

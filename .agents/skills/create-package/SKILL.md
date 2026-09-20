@@ -70,7 +70,14 @@ the package as complete.
    pkgver=1.2.3 # renovate: datasource=github-tags depName=OWNER/REPOSITORY
    ```
 
-6. Generate checksums with `updpkgsums` after the source definition is final.
+6. Confirm upstream publishes a release with downloadable assets for the tags
+   the annotation tracks. The `github-tags` datasource matches tags even when
+   no release exists, and an update to a tag without release assets cannot be
+   checksummed, built, or merged. When upstream tags unreleased versions, add
+   an `allowedVersions` rule to `renovate.json` instead (for example,
+   `"allowedVersions": "<2"`) so Renovate holds the update until real
+   releases appear.
+7. Generate checksums with `updpkgsums` after the source definition is final.
    Prefer the strongest checksum published by upstream (`b2`, then SHA-512,
    SHA-384, SHA-256, SHA-224, SHA-1, MD5, and finally CRC32). Never use `SKIP`
    for a downloadable release archive without documenting an unavoidable
