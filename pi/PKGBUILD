@@ -1,6 +1,6 @@
 # Maintainer: Travis Lyons <pkgbuild at trly dot dev>
 pkgname=pi
-pkgver=1.0.4 # renovate: datasource=github-tags depName=earendil-works/pi
+pkgver=1.1.0 # renovate: datasource=github-tags depName=earendil-works/pi
 pkgrel=2
 pkgdesc="Minimal terminal coding harness"
 arch=('x86_64')
@@ -12,7 +12,7 @@ options=('!debug' '!strip')
 
 source=("${pkgname}-${pkgver}-linux-x64.tar.gz::${url}/releases/download/v${pkgver}/pi-linux-x64.tar.gz"
         "LICENSE-${pkgver}::${url}/raw/v${pkgver}/LICENSE")
-sha256sums=('284c45dd28cf975a13cff6af34741dd0a0cdca6634e8bdfc0083ae7d452e86d6'
+sha256sums=('3faa94666cd3849d37af320ff749407d0271b07a9b94f420c87e30866e10e289'
             '0457f5bcec3b3b211605dfb5d1a49042fd638f3686a410fe099c24a25af13c48')
 
 package() {
