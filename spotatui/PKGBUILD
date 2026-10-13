@@ -13,9 +13,9 @@ options=('!debug' '!strip')
 source=("${pkgname}-${pkgver}-${CARCH}.tar.gz::${url}/releases/download/v${pkgver}/spotatui-linux-${CARCH}.tar.gz"
         "LICENSE-${pkgver}::https://raw.githubusercontent.com/LargeModGames/spotatui/v${pkgver}/LICENSE"
         "README-${pkgver}.md::https://raw.githubusercontent.com/LargeModGames/spotatui/v${pkgver}/README.md")
-sha256sums=('98571bcb4ea2580d913d16febd1e681bd6f8e6559e69533f8456927b7350cb93'
+sha256sums=('f9f3ed964d893a2bbd76f07170697630ca563a15e20e31bf17a6fd27047631e8'
             'b47ad91f512f5ae715df2888abf19ff0172c75de71b6423f836174bae8f8161e'
-            '1a1d5425f668260fab4a21066db502a1442713fec6f34cf7f38875949a4330dc')
+            '600774161abd1fe3804cd3da9975000ca625398ec6b986eea2fe524a01aa8016')
 
 package() {
   install -Dm755 spotatui "${pkgdir}/usr/bin/spotatui"
