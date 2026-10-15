@@ -12,7 +12,7 @@ options=('!debug' '!strip')
 
 source=("${pkgname}-${pkgver}-linux-x64.tar.gz::${url}/releases/download/v${pkgver}/pi-linux-x64.tar.gz"
         "LICENSE-${pkgver}::${url}/raw/v${pkgver}/LICENSE")
-sha256sums=('00fc36cffdebceea5a48230da62cf3fb463178f8fe185766652f96002a246847'
+sha256sums=('24f5be328b66d4da36876296989501974f43ab8434fbb57c35c523a3ea505ded'
             '0457f5bcec3b3b211605dfb5d1a49042fd638f3686a410fe099c24a25af13c48')
 
 package() {
