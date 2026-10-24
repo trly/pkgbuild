@@ -15,7 +15,7 @@ conflicts=('beads-bin')
 
 options=('!debug' '!strip')
 source_x86_64=("${pkgname}-${pkgver}-linux-amd64.tar.gz::${url}/releases/download/v${pkgver}/beads_${pkgver}_linux_amd64.tar.gz")
-sha256sums_x86_64=('3219443a9734b89b93fb16ee8d65844759fa1b3cd3cf139c606b7353cfb0715c')
+sha256sums_x86_64=('c6ea3281f6ff82628351b2d0967c9eb85862c8a0ec0ebc24e63e645c8b02462e')
 
 package() {
   install -Dm755 "${srcdir}/bd" "${pkgdir}/usr/bin/bd"
