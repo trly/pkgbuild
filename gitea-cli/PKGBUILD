@@ -1,0 +1,16 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+pkgname=gitea-cli
+pkgver=1.0.0 # renovate: datasource=json depName=https://dl.gitea.com/gitea-cli/version.json
+pkgrel=1
+pkgdesc="Command-line client for Gitea"
+arch=('x86_64')
+url="https://about.gitea.com/"
+license=('MIT')
+
+options=('!debug' '!strip')
+source=("https://dl.gitea.com/gitea-cli/${pkgver}/gitea-cli-${pkgver}-linux-amd64")
+sha256sums=('7ffabe415d05dfcd18b497d57b49c824764bab9bef094acf890c9645936c33c1')
+
+package() {
+  install -Dm755 "${srcdir}/gitea-cli-${pkgver}-linux-amd64" "${pkgdir}/usr/bin/gt"
+}

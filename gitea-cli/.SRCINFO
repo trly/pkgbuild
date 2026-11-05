@@ -1,0 +1,13 @@
+pkgbase = gitea-cli
+	pkgdesc = Command-line client for Gitea
+	pkgver = 1.0.0
+	pkgrel = 1
+	url = https://about.gitea.com/
+	arch = x86_64
+	license = MIT
+	options = !debug
+	options = !strip
+	source = https://dl.gitea.com/gitea-cli/1.0.0/gitea-cli-1.0.0-linux-amd64
+	sha256sums = 7ffabe415d05dfcd18b497d57b49c824764bab9bef094acf890c9645936c33c1
+
+pkgname = gitea-cli

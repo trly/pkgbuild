@@ -68,6 +68,14 @@
   ],
   "customManagers": [
     {
+      "customType": "jsonata",
+      "managerFilePatterns": ["/gitea-cli/PKGBUILD$/"],
+      "fileFormat": "json",
+      "matchStrings": ["$exists(latest.version) ? latest.version : ''"],
+      "packageNameTemplate": "https://dl.gitea.com/gitea-cli/version.json",
+      "currentValueTemplate": "{{pkgver}}"
+    },
+    {
       "customType": "regex",
       "managerFilePatterns": [
         "/(^|/)PKGBUILD$/"
