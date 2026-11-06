@@ -1,0 +1,26 @@
+# Maintainer: Travis Lyons <pkgbuild at trly dot dev>
+pkgname=jj-stack
+pkgver=0.1.8 # renovate: datasource=github-tags depName=bos/jj-stack
+pkgrel=1
+pkgdesc="Manage stacked GitHub pull requests with Jujutsu"
+arch=('any')
+url="https://github.com/bos/jj-stack"
+license=('Apache-2.0')
+depends=('jj>=0.45.1' 'python>=3.14' 'python-httpx2' 'python-markdown-it-py' 'python-pydantic' 'python-rich')
+makedepends=('python-build' 'python-installer' 'python-hatchling')
+checkdepends=()
+optdepends=('github-cli: authenticate with GitHub CLI')
+source=("https://github.com/bos/jj-stack/releases/download/v${pkgver}/jj_stack-${pkgver}.tar.gz")
+sha256sums=('291ab154d75ee76d7f1a0680c6bbd26f6b6b5875b38909bfe7588b4a0451843e')
+
+build() {
+  cd "${srcdir}/jj_stack-${pkgver}"
+  python -m build --wheel --no-isolation
+}
+
+package() {
+  cd "${srcdir}/jj_stack-${pkgver}"
+  python -m installer --destdir="${pkgdir}" dist/*.whl
+  install -Dm644 LICENSE -t "${pkgdir}/usr/share/licenses/${pkgname}"
+  install -Dm644 NOTICE -t "${pkgdir}/usr/share/licenses/${pkgname}"
+}

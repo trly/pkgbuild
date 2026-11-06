@@ -1,0 +1,21 @@
+pkgbase = jj-stack
+	pkgdesc = Manage stacked GitHub pull requests with Jujutsu
+	pkgver = 0.1.8
+	pkgrel = 1
+	url = https://github.com/bos/jj-stack
+	arch = any
+	license = Apache-2.0
+	makedepends = python-build
+	makedepends = python-installer
+	makedepends = python-hatchling
+	depends = jj>=0.45.1
+	depends = python>=3.14
+	depends = python-httpx2
+	depends = python-markdown-it-py
+	depends = python-pydantic
+	depends = python-rich
+	optdepends = github-cli: authenticate with GitHub CLI
+	source = https://github.com/bos/jj-stack/releases/download/v0.1.8/jj_stack-0.1.8.tar.gz
+	sha256sums = 291ab154d75ee76d7f1a0680c6bbd26f6b6b5875b38909bfe7588b4a0451843e
+
+pkgname = jj-stack
