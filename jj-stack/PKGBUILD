@@ -6,7 +6,7 @@ pkgdesc="Manage stacked GitHub pull requests with Jujutsu"
 arch=('any')
 url="https://github.com/bos/jj-stack"
 license=('Apache-2.0')
-depends=('jj>=0.45.1' 'python>=3.14' 'python-httpx2' 'python-markdown-it-py' 'python-pydantic' 'python-rich')
+depends=('jujutsu>=0.45.1' 'python>=3.14' 'python-httpx2' 'python-markdown-it-py' 'python-pydantic' 'python-rich')
 makedepends=('python-build' 'python-installer' 'python-hatchling')
 checkdepends=()
 optdepends=('github-cli: authenticate with GitHub CLI')

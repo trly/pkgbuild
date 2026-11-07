@@ -8,7 +8,7 @@ pkgbase = jj-stack
 	makedepends = python-build
 	makedepends = python-installer
 	makedepends = python-hatchling
-	depends = jj>=0.45.1
+	depends = jujutsu>=0.45.1
 	depends = python>=3.14
 	depends = python-httpx2
 	depends = python-markdown-it-py
