@@ -29,6 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel@sha256:767de6eaa40dcfeda5263a48737ea03a782caabdf3a403b6e6a203c7fd333681
+    outputs:
+      created: ${{ steps.stage_updated_metadata.outputs.created }}
     permissions:
       contents: read
     steps:
@@ -83,27 +85,80 @@ jobs:
             )
           done
 
-      - name: Commit updated metadata
-        id: commit_updated_metadata
+      - name: Stage updated metadata
+        id: stage_updated_metadata
         shell: bash
         run: |
           set -euo pipefail
 
           echo 'created=false' >> "$GITHUB_OUTPUT"
-          git config user.name 'renovate[bot]'
-          git config user.email '29139614+renovate[bot]@users.noreply.github.com'
           git add -- '*/PKGBUILD' '*/.SRCINFO'
           if git diff --cached --quiet; then
             echo 'Package metadata is already current.'
             exit 0
           fi
-          git commit -m 'chore: update package metadata'
+
+          while IFS= read -r path; do
+            if [[ ! $path =~ ^[a-z0-9][a-z0-9@._+-]*/(PKGBUILD|\.SRCINFO)$ ]]; then
+              echo "Refusing to export unexpected changed path: $path" >&2
+              exit 1
+            fi
+          done < <(git diff --cached --name-only)
+
+          git diff --cached --binary > "$RUNNER_TEMP/metadata.patch"
           echo 'created=true' >> "$GITHUB_OUTPUT"
 
+      - name: Upload updated metadata
+        if: steps.stage_updated_metadata.outputs.created == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-metadata-${{ github.run_id }}
+          path: ${{ runner.temp }}/metadata.patch
+          if-no-files-found: error
+          retention-days: 1
+
+  push:
+    name: Commit updated metadata
+    needs: update
+    if: needs.update.outputs.created == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel@sha256:767de6eaa40dcfeda5263a48737ea03a782caabdf3a403b6e6a203c7fd333681
+    permissions:
+      contents: read
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git github-cli
+
+      - name: Check out Renovate branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Download updated metadata
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: package-metadata-${{ github.run_id }}
+          path: ${{ runner.temp }}/metadata
+
+      - name: Apply updated metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git apply --index "$RUNNER_TEMP/metadata/metadata.patch"
+          while IFS= read -r path; do
+            if [[ ! $path =~ ^[a-z0-9][a-z0-9@._+-]*/(PKGBUILD|\.SRCINFO)$ ]]; then
+              echo "Refusing to commit unexpected changed path: $path" >&2
+              exit 1
+            fi
+          done < <(git diff --cached --name-only)
+
       # GITHUB_TOKEN commits do not trigger another workflow run, so the
-      # narrowly scoped PAT is used only for this final push.
-      - name: Push updated metadata
-        if: steps.commit_updated_metadata.outputs.created == 'true'
+      # narrowly scoped PAT is used only in this isolated push job.
+      - name: Commit and push updated metadata
         env:
           GITHUB_TOKEN: ${{ github.token }}
           METADATA_PUSH_TOKEN: ${{ secrets.METADATA_PUSH_TOKEN }}
@@ -112,6 +167,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          git config user.name 'renovate[bot]'
+          git config user.email '29139614+renovate[bot]@users.noreply.github.com'
 
           current_head_sha=$(gh api \
             "repos/${GITHUB_REPOSITORY}/git/ref/heads/${GITHUB_HEAD_REF}" \
